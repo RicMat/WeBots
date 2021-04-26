@@ -6,7 +6,7 @@ WorldInfo {
 }
 Viewpoint {
   orientation 0.06061588593407205 -0.8554893410226281 -0.5142603443481689 3.3425863763935975
-  position 1.1436358636424302 12.126882989886974 -6.808629063137761
+  position -0.09818164969142082 2.0724604412155214 -1.6140752047628104
 }
 TexturedBackground {
 }
@@ -43,7 +43,7 @@ E-puck {
   translation 0.242523 4.54082e-14 0.0252638
   rotation -1.4131899998487522e-05 0.9999999998929743 -3.786909999594703e-06 -0.7854053071795866
   name "epuck1"
-  controller "test_obstacle_comms"
+  controller "test_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 1
@@ -59,7 +59,7 @@ E-puck {
     DEF EMITTER Emitter {
       name "bt_e"
       range 1
-      channel 1
+      channel 2
     }
     DEF RECEIVER Receiver {
       name "bt_r"
@@ -82,7 +82,7 @@ E-puck {
   translation -0.311417 -3.33067e-16 -0.237307
   rotation 0 1 0 0.2617989999999993
   name "epuck2"
-  controller "test_obstacle_comms"
+  controller "test_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -95,7 +95,7 @@ E-puck {
     DEF EMITTER Emitter {
       name "bt_e"
       range 1
-      channel 1
+      channel 2
     }
     DEF RECEIVER Receiver {
       name "bt_r"
