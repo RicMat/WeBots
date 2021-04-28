@@ -1,3 +1,9 @@
+// To Do: 
+// - Add a control so there cannot be two team inglobations/joins at the same time
+//   e.g. robot_11 of team_3 meets robot_2 of team_1, robot_12 of team_3 meets robot_3 of team_2
+//   in this case we'd have two robots trying to move team_3 towards team_1 and team_2
+// - 
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -98,7 +104,7 @@ void ObstacleAvoidanceModule (void) {
 // MHM - Message Handling Module
 ////////////////////////////////////////////
 
-char code_in[4], ext_ID_s[4], receiver_ID[4], ext_team_player, ext_leader, next_queue_ID[4];
+char code_in[4], ext_ID_s[4], receiver_ID[4], ext_team_player, ext_leader, last_queued;
 bool leader = false, team_player = false, in_queue = false;
 int leader_ID = 0, ext_leader_ID = 0, idx = 0, ext_ID = 0, tmp = 0;
 int comms_queue[7];
@@ -121,8 +127,6 @@ void handle_message(char* buffer) {
   SSS - code_in - message code as string
   SSS - ext_ID_s - external ID as string
   SSS - receiver_ID - ID of the receiver as string
-  S   - external_team_player - Y if external bot is in a team
-  S   - ext_leader - Y if the external bot is the leader of its team
   
   */
   
@@ -130,8 +134,9 @@ void handle_message(char* buffer) {
   strncpy(ext_ID_s, buffer+3, 3);
   ext_ID = atoi(ext_ID_s);
   strncpy(receiver_ID, buffer+6, 3);
-  strncpy(ext_team_player, buffer+9, 1);
-  strncpy(ext_leader, buffer+20, 1);
+  // strncpy(ext_team_player, buffer+9, 1);
+  // strncpy(ext_leader, buffer+20, 1);
+  // strncpy(last_queued, buffer+21, 1);
   
   if (atoi(receiver_ID) != my_ID || atoi(receiver_ID) != 0) { // might add relay and or TTL
     /* message is neither for this robot nor for broadcast */
@@ -144,58 +149,63 @@ void handle_message(char* buffer) {
     
     Variable:
     
-    None
+    S   - external_team_player - Y if external bot is in a team
+    S   - ext_leader - Y if the external bot is the leader of its team
     
     */
     case "DNB": // Discover New Bot
+      strncpy(ext_team_player, buffer+9, 1);
+      strncpy(ext_leader, buffer+20, 1);
       for (i=0; i<idx; i++) {
         if(comms_queue[i] == ext_ID) {
           in_queue = true; // discard this communication
         }
       }
       if (! in_queue) {
-        comms_queue[idx] = ext_ID;
+        /* New robot - process received information */
+        // comms_queue[idx] = ext_ID;
+        if (ext_team_player) {
+          /* external bot has a team */
+          if (leader_ID < ext_leader_ID) {
+            /* inglobate other team */
+            /* to be done at message level - LJT message */
+            break;
+          }
+          else {
+            /* join other team */
+            /* sends a series of LJT messages for each bot in the team */
+            join_external_team(ext_ID, ext_leader, "N");
+          }
+        }
+        else {
+          /* external bot has not a team */
+          /* check who has the lowest ID to determine who is the leader */
+          if (leader_ID < ext_ID) {
+            /* external bot will join my team */
+            /* to be done at message level - LJT message */
+            break;
+          }
+          else {
+            /* join other bot in a new team */
+            /* sends a series of LJT messages for each bot in the team */
+            /* since it's only a single bot, we might just swap the ID of the bot 
+               and the ID of actual leader so we do not have to transfer the whole data */
+            join_external_team(ext_ID, ext_leader, "Y");
+          }
+        }
       }
       break;
     /*
     
     Variable:
     
-    SSS - next_queue_ID - ID of the next
+    S - last_queued - Y if this is the last bot in queue of the external bot
     
-    */
-    case "RJT": // Request To Join The Team
-      inglobate_external_team(ext_ID, ext_leader);
-      break;  
-  }
-  
-  if (! in_queue) {
-    /* New robot - process received information */
-    if (ext_team_player) {
-      /* external bot has a team */
-      if (leader_ID < ext_leader_ID) {
-        /* inglobate other team */
-        /* to be done at next step */
-        break;
-      }
-      else {
-        /* join other team */
-        join_external_team(ext_ID, ext_leader);
-      }
-    }
-    else {
-      /* external bot has not a team */
-      /* check who has the lowest ID to determine who is the leader */
-      if (leader_ID < ext_ID) {
-        /* external bot will join my team */
-        /* to be done at next step */
-        break;
-      }
-      else {
-        /* join other bot in a new team */
-        join_external_team(ext_ID, ext_leader);
-      }
-    }
+    */ 
+    case "LJT": // List of other team-members to Join the Team
+      strncpy(last_queued, buffer+24, 1);
+      inglobate_external_team(ext_ID, ext_leader, last_queued);
+      break;
   } 
 }
 
@@ -401,7 +411,9 @@ int main() {
     /* one step in the future */
     
     /* Initial message exchange - to be repeated every step to engage new bots */ 
-    construct_message("DNB", "000"); // saves the desired string in variable message
+    if (!team_player) {
+      construct_message("DNB", "000"); // saves the desired string in variable message
+    }
     
     // if (! have_leader) { 
       // /* DNB Discover New Bot - ID - No Part of Team - No Leader */
