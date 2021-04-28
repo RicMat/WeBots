@@ -11,9 +11,11 @@
 #include <webots/receiver.h>
 #include <webots/robot.h>
 #include <webots/supervisor.h>
+#include <cstring.h>
 
 // Custom libraries
 #include "OAM.h"
+#include "MHM.h"
 
 
 // Global defines
@@ -63,7 +65,7 @@ WbFieldRef field;
 
 // Variables
 FILE *fpt;
-char name[20], filename[20];
+char name[20], filename[20], message[40+1];
 int ps_offset[NB_DIST_SENS] = {0, 0, 0, 0, 0, 0, 0, 0}, i, speed[2];
 int rand_num, num, my_ID, counter = 0, run = 1;
 float turn;  
@@ -87,6 +89,115 @@ int oam_reset_counter = 0;
 // const int PS_OFFSET_SIMULATION[NB_DIST_SENS] = {300, 300, 300, 300, 300, 300, 300, 300};
 const int PS_OFFSET_SIMULATION[NB_DIST_SENS] = {80, 80, 80, 80, 80, 80, 80, 80};
 int ps_value[NB_DIST_SENS] = {0, 0, 0, 0, 0, 0, 0, 0};
+
+void ObstacleAvoidanceModule (void) {
+  obstacle_avoidance();
+}
+
+////////////////////////////////////////////
+// MHM - Message Handling Module
+////////////////////////////////////////////
+
+char code_in[4], ext_ID_s[4], receiver_ID[4], ext_team_player, ext_leader, next_queue_ID[4];
+bool leader = false, team_player = false, in_queue = false;
+int leader_ID = 0, ext_leader_ID = 0, idx = 0, ext_ID = 0, tmp = 0;
+int comms_queue[7];
+
+void construct_message(char* code_out, char* deliver_to) {
+  
+  switch(code_out)
+  {
+    case "DNB":
+      construct_discovery_message(code_out, my_ID, deliver_to, team_player, leader);
+      break;
+  }
+}
+
+void handle_message(char* buffer) {
+  /*
+  
+  Fixed:
+  
+  SSS - code_in - message code as string
+  SSS - ext_ID_s - external ID as string
+  SSS - receiver_ID - ID of the receiver as string
+  S   - external_team_player - Y if external bot is in a team
+  S   - ext_leader - Y if the external bot is the leader of its team
+  
+  */
+  
+  strncpy(code_in, buffer, 3);
+  strncpy(ext_ID_s, buffer+3, 3);
+  ext_ID = atoi(ext_ID_s);
+  strncpy(receiver_ID, buffer+6, 3);
+  strncpy(ext_team_player, buffer+9, 1);
+  strncpy(ext_leader, buffer+20, 1);
+  
+  if (atoi(receiver_ID) != my_ID || atoi(receiver_ID) != 0) { // might add relay and or TTL
+    /* message is neither for this robot nor for broadcast */
+    return;
+  }
+  
+  switch(code_in)
+  {
+    /* 
+    
+    Variable:
+    
+    None
+    
+    */
+    case "DNB": // Discover New Bot
+      for (i=0; i<idx; i++) {
+        if(comms_queue[i] == ext_ID) {
+          in_queue = true; // discard this communication
+        }
+      }
+      if (! in_queue) {
+        comms_queue[idx] = ext_ID;
+      }
+      break;
+    /*
+    
+    Variable:
+    
+    SSS - next_queue_ID - ID of the next
+    
+    */
+    case "RJT": // Request To Join The Team
+      inglobate_external_team(ext_ID, ext_leader);
+      break;  
+  }
+  
+  if (! in_queue) {
+    /* New robot - process received information */
+    if (ext_team_player) {
+      /* external bot has a team */
+      if (leader_ID < ext_leader_ID) {
+        /* inglobate other team */
+        /* to be done at next step */
+        break;
+      }
+      else {
+        /* join other team */
+        join_external_team(ext_ID, ext_leader);
+      }
+    }
+    else {
+      /* external bot has not a team */
+      /* check who has the lowest ID to determine who is the leader */
+      if (leader_ID < ext_ID) {
+        /* external bot will join my team */
+        /* to be done at next step */
+        break;
+      }
+      else {
+        /* join other bot in a new team */
+        join_external_team(ext_ID, ext_leader);
+      }
+    }
+  } 
+}
 
 ////////////////////////////////////////////
 // PHM - Position Handling Module
@@ -205,6 +316,7 @@ int main() {
   
   /* Initialization and initial reset*/
   my_ID = atoi(wb_robot_get_name() + 5);
+  const char *my_name = wb_robot_get_name();
   
   const WbNodeRef root_node = wb_supervisor_node_get_root();
   const WbFieldRef root_children_field = wb_supervisor_node_get_field(root_node, "children");
@@ -262,53 +374,85 @@ int main() {
     ObstacleAvoidanceModule();
     
     /* Randomize Movement */
-    RandomizeMovementModule();
+    if (! team_player) {
+      RandomizeMovementModule();
+    }
+    
+    
+    
+    
+    
+    
+    
+    
+    // Only if leaderrrrrrrrrrr //
+    
+    
+    
+    
+    
+    
+    
+    
     
     /* Communication */
     /* Communication is execute one step in advance as we need time to */
     /* process the data which will be delivered to the other robot */
     /* one step in the future */
     
-    if (1 > 0) { // message_sent == FALSE && oam_active == TRUE
-      // printf("sending\n");
-      const char *message = wb_robot_get_name();
-      wb_emitter_send(emitter_bt, message, strlen(message) + 1); // send my ID continuously because we have no bumper here
-      message_sent = TRUE;
-      
-    }
-    // else {
-      // if (strncmp(wb_robot_get_name(),"epuck1", 6)){
-        // printf("not colliding\n");
-      // }
+    /* Initial message exchange - to be repeated every step to engage new bots */ 
+    construct_message("DNB", "000"); // saves the desired string in variable message
+    
+    // if (! have_leader) { 
+      // /* DNB Discover New Bot - ID - No Part of Team - No Leader */
+      // snprintf(message, 7, "DNB%dNN", my_ID); 
     // }
-    // fprintf(fpt, "%d\n", (int)wb_robot_get_time());
-    // fflush(fpt);
-    if (wb_receiver_get_queue_length(receiver_bt) > 0) {
+    // else {
+    
+    // }
+    wb_emitter_send(emitter_bt, message, strlen(message) + 1);
+    
+    /* Check for new messages and process them */
+    while (wb_receiver_get_queue_length(receiver_bt) > 0) {
       const char *buffer = wb_receiver_get_data(receiver_bt);
-      // printf("%s at time %ld\n", buffer, time(NULL));
-      if (my_ID < atoi(buffer + 5)){
-        // printf("%s at time %f\n", buffer,  wb_robot_get_time());
-        // snprintf(data, 50, "%f", wb_robot_get_time());
-        // fprintf(fpt,"%s\n", data);
-        // printf("%.2f\n", fmod(wb_robot_get_time(),10800));
-        fprintf(fpt, "%d\n", (int)round(wb_robot_get_time())%10800);
-        // fflush(fpt);
-        counter += 1;
-      }
-      wb_receiver_next_packet(receiver_bt);
-      // printf("%s at time %d\n", buffer, wb_receiver_get_queue_length(receiver));
+      handle_message(buffer);
+      wb_receiver_next_packet(receiver_bt);      
+    }
+    
+    /* Move to location */
+    if (mtl_active) {
+      angle = angle_offset();
       
-    }    
+      if (turn) { /* we are facing the right direction */
+        forward_move = false;
+        turn_towards_location();
+      }
+      else { /* turn until we face the right direction */
+        forward_move = true;
+      }
+      
+      if (forward_move) {
+        distance = calculate_distance_location();
+        wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]);
+        wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]);
+      }
+      
+      /* Arrived at location */
+      if (mtl_arrived) {
+        mtl_active = false;
+        mtl_arrived = false;
+      }
+    }  
     
     // Set wheel speeds
-    if (my_ID != 10) {
-      wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]); // speed[LEFT]);
-      wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]); // speed[RIGHT]);
-    }
-    else {
-      wb_motor_set_velocity(left_motor, 0);
-      wb_motor_set_velocity(right_motor, 0);
-    }
+    // if (my_ID != 10) {
+      // wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]); // speed[LEFT]);
+      // wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]); // speed[RIGHT]);
+    // }
+    // else {
+      // wb_motor_set_velocity(left_motor, 0);
+      // wb_motor_set_velocity(right_motor, 0);
+    // }
   }
 
   fclose(fpt);

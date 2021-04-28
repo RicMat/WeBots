@@ -16,7 +16,7 @@
 
 int kkk = 0;
 
-void ObstacleAvoidanceModule(void) {
+void obstacle_avoidance(void) {
   int max_ds_value, i;
   int Activation[] = {0, 0};
 

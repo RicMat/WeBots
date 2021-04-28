@@ -40,6 +40,6 @@ extern int oam_side;
 extern int message_sent;
 extern int oam_reset_counter;
 
-void ObstacleAvoidanceModule(void);
+void obstacle_avoidance(void);
 
 #endif 
