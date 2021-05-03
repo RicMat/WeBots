@@ -104,7 +104,7 @@ void ObstacleAvoidanceModule (void) {
 // MHM - Message Handling Module
 ////////////////////////////////////////////
 
-char code_in[4], ext_ID_s[4], receiver_ID[4], ext_leader_ID[4], ext_team_player, ext_leader, last_queued;
+char code_in[4], ext_ID_s[4], receiver_ID[4], leader_ID_s[4], ext_leader_ID[4], ext_team_player, ext_leader, last_queued;
 bool leader = false, team_player = false, in_queue = false;
 int leader_ID = 0, ext_leader_ID = 0, idx = 0, ext_ID = 0, tmp = 0;
 int comms_queue[7];
@@ -118,7 +118,7 @@ void join_external_team(char* ext_ID_s, char* ext_leader) {
   /* message structure: 
     
     SSS - code_in - code of the message
-    III - ID - ID of the bot we are transferring
+    SSS - ID - ID of the bot we are transferring
     SSS - ext_ID_s - ID of the receiving robot (for comms)
     S - last_queued - Y if this is the last bot in queue
     
@@ -139,12 +139,24 @@ void join_external_team(char* ext_ID_s, char* ext_leader) {
     wb_emitter_send(emitter_bt, message, strlen(message) + 1);
     
     // send message to the bot we are transferring
-    
-    //////////////////////
-    // To Do
-    //////////////////////
+    construct_transfer_team_message(my_ID, comms_queue[i], ext_leader_ID);
+    wb_emitter_send(emitter_bt, message, strlen(message) + 1);
     
   }
+}
+
+void inglobate_external_team(ext_leader) {
+  /*
+  
+  If we are the leader we should share the message with all our team
+  If we are not the leader we should share the info with our leader
+  This setting resembles a Mesh Topology where all the nodes in a team but the leader
+    are just end nodes, and the leader is the relay unless required. We could achieve 
+    the same result using a TTL = 0 flag.
+  
+  */
+  
+  
 }
 
 void handle_message(char* buffer) {
@@ -153,7 +165,7 @@ void handle_message(char* buffer) {
   Fixed:
   
   SSS - code_in - message code as string
-  SSS - ext_ID_s - external ID as string
+  SSS - ext_ID_s - external ID as string (sender)
   SSS - receiver_ID - ID of the receiver as string
   
   */
@@ -167,6 +179,12 @@ void handle_message(char* buffer) {
     /* message is neither for this robot nor for broadcast */
     return;
   }
+  
+  ///////////
+  //
+  // To Do: Consider whether the size is lower than 7
+  //
+  ///////////
   
   switch(code_in)
   {
@@ -212,7 +230,7 @@ void handle_message(char* buffer) {
           if (leader_ID < ext_ID) {
             /* external bot will join my team */
             /* to be done at message level - LJT message */
-            break;
+            break; // To Do: Maybe send location for supplementary bots
           }
           else {
             /* join other bot in a new team */
@@ -235,6 +253,20 @@ void handle_message(char* buffer) {
       strncpy(last_queued, buffer+9, 1);
       inglobate_external_team(ext_ID, ext_leader, last_queued);
       break;
+    /*
+    
+    Variable:
+    
+    SSS - external_leader_ID - ID of the leader of the external team
+    
+    */
+    case "TTT": // Transfer To the new Team
+      strncpy(leader_ID_s, buffer+9, 3);
+      leader_ID = atoi(leader_ID_s); // set up new leader
+      
+      //////////////
+      // To Do: set up new location
+      //////////////
   } 
 }
 
