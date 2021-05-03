@@ -71,7 +71,7 @@ WbFieldRef field;
 
 // Variables
 FILE *fpt;
-char name[20], filename[20], message[40+1];
+char name[20], filename[20], message[34+1], tmp_s[3+1];
 int ps_offset[NB_DIST_SENS] = {0, 0, 0, 0, 0, 0, 0, 0}, i, speed[2];
 int rand_num, num, my_ID, counter = 0, run = 1;
 float turn;  
@@ -104,18 +104,46 @@ void ObstacleAvoidanceModule (void) {
 // MHM - Message Handling Module
 ////////////////////////////////////////////
 
-char code_in[4], ext_ID_s[4], receiver_ID[4], ext_team_player, ext_leader, last_queued;
+char code_in[4], ext_ID_s[4], receiver_ID[4], ext_leader_ID[4], ext_team_player, ext_leader, last_queued;
 bool leader = false, team_player = false, in_queue = false;
 int leader_ID = 0, ext_leader_ID = 0, idx = 0, ext_ID = 0, tmp = 0;
 int comms_queue[7];
 
-void construct_message(char* code_out, char* deliver_to) {
+void join_external_team(char* ext_ID_s, char* ext_leader) {
+  /* join other bot in a new team */
+  /* sends a series of LJT messages for each bot in the team */
+  /* if not the leader, update all the slaves of the change */
+  /* if the leader, update the status to slave */
   
-  switch(code_out)
-  {
-    case "DNB":
-      construct_discovery_message(code_out, my_ID, deliver_to, team_player, leader);
-      break;
+  /* message structure: 
+    
+    SSS - code_in - code of the message
+    III - ID - ID of the bot we are transferring
+    SSS - ext_ID_s - ID of the receiving robot (for comms)
+    S - last_queued - Y if this is the last bot in queue
+    
+  */
+  int i = 0;
+  char tmp[4];
+  
+  for (i=0; i<idx; i++) {
+    // send message to the bot we are joining
+    // sprintf(tmp_message, "LJT%03d%sN", comms_queue[i], ext_ID_s);
+    
+    if(i == idx-1) {
+      construct_join_team_message(comms_queue[i], ext_ID_s, "Y");
+    }
+    else {
+      construct_join_team_message(comms_queue[i], ext_ID_s, "N");
+    }
+    wb_emitter_send(emitter_bt, message, strlen(message) + 1);
+    
+    // send message to the bot we are transferring
+    
+    //////////////////////
+    // To Do
+    //////////////////////
+    
   }
 }
 
@@ -134,9 +162,6 @@ void handle_message(char* buffer) {
   strncpy(ext_ID_s, buffer+3, 3);
   ext_ID = atoi(ext_ID_s);
   strncpy(receiver_ID, buffer+6, 3);
-  // strncpy(ext_team_player, buffer+9, 1);
-  // strncpy(ext_leader, buffer+20, 1);
-  // strncpy(last_queued, buffer+21, 1);
   
   if (atoi(receiver_ID) != my_ID || atoi(receiver_ID) != 0) { // might add relay and or TTL
     /* message is neither for this robot nor for broadcast */
@@ -151,11 +176,15 @@ void handle_message(char* buffer) {
     
     S   - external_team_player - Y if external bot is in a team
     S   - ext_leader - Y if the external bot is the leader of its team
+    SSS - ext_leader_ID_s - ID of the external team's leader
     
     */
     case "DNB": // Discover New Bot
       strncpy(ext_team_player, buffer+9, 1);
-      strncpy(ext_leader, buffer+20, 1);
+      strncpy(ext_leader, buffer+10, 1);
+      strncpy(ext_leader_ID_s, buffer+11, 3);
+      ext_leader_ID = atoi(ext_leader_ID_s);
+      
       for (i=0; i<idx; i++) {
         if(comms_queue[i] == ext_ID) {
           in_queue = true; // discard this communication
@@ -174,7 +203,7 @@ void handle_message(char* buffer) {
           else {
             /* join other team */
             /* sends a series of LJT messages for each bot in the team */
-            join_external_team(ext_ID, ext_leader, "N");
+            join_external_team(ext_ID_s, ext_leader_ID_s);
           }
         }
         else {
@@ -190,7 +219,7 @@ void handle_message(char* buffer) {
             /* sends a series of LJT messages for each bot in the team */
             /* since it's only a single bot, we might just swap the ID of the bot 
                and the ID of actual leader so we do not have to transfer the whole data */
-            join_external_team(ext_ID, ext_leader, "Y");
+            join_external_team(ext_ID_s, ext_leader_ID_s);
           }
         }
       }
@@ -203,7 +232,7 @@ void handle_message(char* buffer) {
     
     */ 
     case "LJT": // List of other team-members to Join the Team
-      strncpy(last_queued, buffer+24, 1);
+      strncpy(last_queued, buffer+9, 1);
       inglobate_external_team(ext_ID, ext_leader, last_queued);
       break;
   } 
@@ -412,7 +441,7 @@ int main() {
     
     /* Initial message exchange - to be repeated every step to engage new bots */ 
     if (!team_player) {
-      construct_message("DNB", "000"); // saves the desired string in variable message
+      construct_discovery_message(my_ID, team_player, leader); // saves the desired string in variable message
     }
     
     // if (! have_leader) { 

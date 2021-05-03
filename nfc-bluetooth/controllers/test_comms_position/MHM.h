@@ -1,7 +1,7 @@
 #ifndef MHM_H_   
 #define MHM_H_
 
-extern char message[40+1];
+extern char message[34+1];
 extern int comms_queue[7];
 extern int idx;
 
