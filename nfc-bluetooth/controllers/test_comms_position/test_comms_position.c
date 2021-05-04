@@ -73,7 +73,7 @@ WbFieldRef field;
 FILE *fpt;
 char name[20], filename[20], message[34+1], tmp_s[3+1];
 int ps_offset[NB_DIST_SENS] = {0, 0, 0, 0, 0, 0, 0, 0}, i, speed[2];
-int rand_num, num, my_ID, counter = 0, run = 1;
+int rand_num, num, my_ID, counter = 0, run = 1, team_size = 1;
 float turn;  
 
 //------------------------------------------------------------------------------
@@ -104,10 +104,27 @@ void ObstacleAvoidanceModule (void) {
 // MHM - Message Handling Module
 ////////////////////////////////////////////
 
-char code_in[4], ext_ID_s[4], receiver_ID[4], leader_ID_s[4], ext_leader_ID[4], ext_team_player, ext_leader, last_queued;
+char code_in[4], ext_ID_s[4], receiver_ID[4], leader_ID_s[4], ext_leader_ID[4], ttl_s[4], ext_team_player, ext_leader, last_queued, ext_team_size;
 bool leader = false, team_player = false, in_queue = false;
-int leader_ID = 0, ext_leader_ID = 0, idx = 0, ext_ID = 0, tmp = 0;
-int comms_queue[7];
+int leader_ID = 0, ext_leader_ID = 0, idx_comms = 0, idx_team = 0, ext_ID = 0, external_team_connection_ID = 0, tmp = 0, ttl = 0;
+int comms_queue[7], team_IDs[7];
+// comms queue is useless as we are using mesh flooding so it equals to seending broadcast with ttl = 0
+
+
+
+
+
+
+
+////////
+// Important
+// To Do: check team id - external messages shall not be broadcasted outside of the team
+////////
+
+
+
+
+
 
 void join_external_team(char* ext_ID_s, char* ext_leader) {
   /* join other bot in a new team */
@@ -118,44 +135,68 @@ void join_external_team(char* ext_ID_s, char* ext_leader) {
   /* message structure: 
     
     SSS - code_in - code of the message
-    SSS - ID - ID of the bot we are transferring
+    SSS - my_ID - ID of the sending bot
     SSS - ext_ID_s - ID of the receiving robot (for comms)
+    SSS - TTL - TTL flag
     S - last_queued - Y if this is the last bot in queue
     
   */
-  int i = 0;
-  char tmp[4];
+  if (idx_team > 0) {
+    construct_join_team_message(my_ID_s, ext_ID_s, "N");
+  }
+  else {
+    construct_join_team_message(my_ID_s, ext_ID_s, "Y");
+  }
+  wb_emitter_send(emitter_bt, message, strlen(message) + 1);
   
-  for (i=0; i<idx; i++) {
+  for (i=0; i<idx_team; i++) {
     // send message to the bot we are joining
-    // sprintf(tmp_message, "LJT%03d%sN", comms_queue[i], ext_ID_s);
+    // sprintf(tmp_message, "LJT%03d%sN", team_IDs[i], ext_ID_s);
     
-    if(i == idx-1) {
-      construct_join_team_message(comms_queue[i], ext_ID_s, "Y");
+    if(i == idx_team-1) {
+      construct_join_team_message(team_IDs[i], ext_ID_s, "Y");
     }
     else {
-      construct_join_team_message(comms_queue[i], ext_ID_s, "N");
+      construct_join_team_message(team_IDs[i], ext_ID_s, "N");
     }
     wb_emitter_send(emitter_bt, message, strlen(message) + 1);
     
     // send message to the bot we are transferring
-    construct_transfer_team_message(my_ID, comms_queue[i], ext_leader_ID);
+    construct_transfer_team_message(my_ID_s, team_IDs[i], ext_leader_ID);
     wb_emitter_send(emitter_bt, message, strlen(message) + 1);
+    ////////
+    // To Do: Update Location
+    ////////
     
   }
 }
 
-void inglobate_external_team(ext_leader) {
+void inglobate_external_team(char* ext_ID_s, char last_queued) {
   /*
   
   If we are the leader we should share the message with all our team
   If we are not the leader we should share the info with our leader
-  This setting resembles a Mesh Topology where all the nodes in a team but the leader
-    are just end nodes, and the leader is the relay unless required. We could achieve 
-    the same result using a TTL = 0 flag.
   
   */
+  if (leader) {
+    /* TTL set to 0 as it should reach every other bot in the team in a single hop */
+    construct_share_with_team_message("ITM", my_ID_s, "000", "000", ext_ID_s); 
+    // To Do: add location info
+  }
+  else {
+    /* TTL set to 3 as it should be enough to travel the whole team */
+    construct_share_with_team_message("ITM", my_ID_s, "000", "003", ext_ID_s);
+  }
+  wb_emitter_send(emitter_bt, message, strlen(message) + 1);
   
+  /* Save data of the new bot */
+  team_IDs[idx_team] = atoi(ext_ID_s);
+  idx_team += 1;
+  
+  /* Update my location */
+  ////////
+  // To Do: update my location after the new bot has joined
+  ////////
   
 }
 
@@ -167,13 +208,19 @@ void handle_message(char* buffer) {
   SSS - code_in - message code as string
   SSS - ext_ID_s - external ID as string (sender)
   SSS - receiver_ID - ID of the receiver as string
+  SSS - TTL - TTL
   
   */
+  
+  /* check if this message was already received */
+  // To Do: if message already received discard it. Consider also case where the sender id is different but the message is the same
   
   strncpy(code_in, buffer, 3);
   strncpy(ext_ID_s, buffer+3, 3);
   ext_ID = atoi(ext_ID_s);
   strncpy(receiver_ID, buffer+6, 3);
+  strncpy(ttl_s, buffer+9, 3);
+  ttl = atoi(ttl_s);
   
   if (atoi(receiver_ID) != my_ID || atoi(receiver_ID) != 0) { // might add relay and or TTL
     /* message is neither for this robot nor for broadcast */
@@ -182,9 +229,16 @@ void handle_message(char* buffer) {
   
   ///////////
   //
-  // To Do: Consider whether the size is lower than 7
+  // To Do: increase team_size
   //
   ///////////
+  
+  if (ttl > 0) {
+    strncpy(message, buffer, 9);
+    strcat(message, "%03d", ttl-1);
+    strcat(message, "%s", buffer+12);
+    wb_emitter_send(emitter_bt, message, strlen(message) + 1);
+  }
   
   switch(code_in)
   {
@@ -193,24 +247,34 @@ void handle_message(char* buffer) {
     Variable:
     
     S   - external_team_player - Y if external bot is in a team
+    s   - external_team_size - size of the external team
     S   - ext_leader - Y if the external bot is the leader of its team
     SSS - ext_leader_ID_s - ID of the external team's leader
     
     */
     case "DNB": // Discover New Bot
-      strncpy(ext_team_player, buffer+9, 1);
-      strncpy(ext_leader, buffer+10, 1);
-      strncpy(ext_leader_ID_s, buffer+11, 3);
+      strncpy(ext_team_player, buffer+12, 1);
+      strncpy(ext_team_size, buffer+13, 1);
+      strncpy(ext_leader, buffer+14, 1);
+      strncpy(ext_leader_ID_s, buffer+15, 3);
       ext_leader_ID = atoi(ext_leader_ID_s);
       
-      for (i=0; i<idx; i++) {
-        if(comms_queue[i] == ext_ID) {
+      tmp = atoi(ext_team_size);
+      if (tmp + team_size > 7) {
+        // To Do:
+        reject_union_team();
+        // To Do: add the bot to external queue
+        break;
+      }
+      
+      for (i=0; i<idx_team; i++) {
+        if(team_IDs[i] == ext_ID) {
           in_queue = true; // discard this communication
         }
       }
       if (! in_queue) {
         /* New robot - process received information */
-        // comms_queue[idx] = ext_ID;
+        // team_IDs[idx] = ext_ID;
         if (ext_team_player) {
           /* external bot has a team */
           if (leader_ID < ext_leader_ID) {
@@ -250,8 +314,8 @@ void handle_message(char* buffer) {
     
     */ 
     case "LJT": // List of other team-members to Join the Team
-      strncpy(last_queued, buffer+9, 1);
-      inglobate_external_team(ext_ID, ext_leader, last_queued);
+      strncpy(last_queued, buffer+12, 1);
+      inglobate_external_team(ext_ID_s, last_queued);
       break;
     /*
     
@@ -261,12 +325,24 @@ void handle_message(char* buffer) {
     
     */
     case "TTT": // Transfer To the new Team
-      strncpy(leader_ID_s, buffer+9, 3);
+      strncpy(leader_ID_s, buffer+12, 3);
       leader_ID = atoi(leader_ID_s); // set up new leader
       
       //////////////
       // To Do: set up new location
       //////////////
+      break;
+    /*
+    
+    Variable:
+    
+    SSS - ext_ID_s - ID of the external bot we are inglobating
+    
+    */
+    case "ITM": // Inglobate Team Member
+      team_IDs[idx_team] = atoi(ext_ID_s);
+      idx_team += 1;
+      
   } 
 }
 

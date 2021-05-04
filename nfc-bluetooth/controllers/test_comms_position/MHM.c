@@ -22,7 +22,7 @@ void construct_discovery_message(int my_ID, char team_player, char leader) {
   
 }
 
-void construct_join_team_message(int sender, char* receiver, char last_queued) {
+void construct_join_team_message(int sender, char* receiver, char* TTL, char last_queued) {
   /* join other bot in a new team */
   /* sends a series of LJT messages for each bot in the team */
   /* if not the leader, update all the slaves of the change */
@@ -39,11 +39,12 @@ void construct_join_team_message(int sender, char* receiver, char last_queued) {
   strcpy(message, "LJT");
   strcat(message, "%03d", sender);
   strcat(message, receiver);
+  strcat(message, TTL);
   strcat(message, last_queued);
   
 }
 
-void construct_transfer_team_message(int sender, char* receiver, char* ext_leader_ID) {
+void construct_transfer_team_message(char* sender, char* receiver, char* TTL, char* ext_leader_ID) {
   /* similar to the JTM */
   /* we are here contacting our team members and requesting them to transfer to the new team*/
   
@@ -55,8 +56,19 @@ void construct_transfer_team_message(int sender, char* receiver, char* ext_leade
     
   */
   strcpy(message, "TTT");
-  strcat(message, "s", sender);
+  strcat(message, sender);
   strcat(message, receiver);
+  strcat(message, TTL);
   strcat(message, ext_leader_ID);
+  
+}
+
+void construct_share_with_team_message(char* code_in, char* sender, char* receiver, char* TTL, char* extra) {
+  
+  strcpy(message, code_in);
+  strcat(message, sender);
+  strcat(message, receiver);
+  strcat(message, TTL);
+  strcat(message, extra);
   
 }
