@@ -25,6 +25,7 @@
 
 
 // Global defines
+#define SIZE 100
 #define TRUE 1
 #define FALSE 0
 #define NO_SIDE -1
@@ -74,7 +75,7 @@ FILE *fpt;
 char name[20], filename[20], message[34+1], tmp_s[3+1];
 int ps_offset[NB_DIST_SENS] = {0, 0, 0, 0, 0, 0, 0, 0}, i, speed[2];
 int rand_num, num, my_ID, counter = 0, run = 1, team_size = 1;
-float turn;  
+float turn; 
 
 //------------------------------------------------------------------------------
 //
@@ -104,12 +105,18 @@ void ObstacleAvoidanceModule (void) {
 // MHM - Message Handling Module
 ////////////////////////////////////////////
 
-char code_in[4], ext_ID_s[4], receiver_ID[4], leader_ID_s[4], ext_leader_ID[4], ttl_s[4], ext_team_player, ext_leader, last_queued, ext_team_size;
+char code_in[4], ext_ID_s[4], receiver_ID_s[4], leader_ID_s[4], ext_leader_ID[4];
+char ttl_s[4], extra[22+1], tmp_s[34+1];
+char ext_team_player, ext_leader, last_queued, ext_team_size;
 bool leader = false, team_player = false, in_queue = false;
-int leader_ID = 0, ext_leader_ID = 0, idx_comms = 0, idx_team = 0, ext_ID = 0, external_team_connection_ID = 0, tmp = 0, ttl = 0;
+int leader_ID = 0, team_ID = 0, ext_leader_ID = 0, idx_comms = 0, idx_team = 0, ext_ID = 0;
+int receiver_ID = 0, external_team_connection_ID = 0, tmp = 0, ttl = 0;
 int comms_queue[7], team_IDs[7];
 // comms queue is useless as we are using mesh flooding so it equals to seending broadcast with ttl = 0
 
+// Stored messages - Could use an Hash Table
+char messages_lookback[4][34+1];
+int messages_loopback_size = [0, 0, 0, 0];
 
 
 
@@ -135,7 +142,7 @@ void join_external_team(char* ext_ID_s, char* ext_leader) {
   /* message structure: 
     
     SSS - code_in - code of the message
-    SSS - my_ID - ID of the sending bot
+    SSS - my_ID_s - ID of the sending bot
     SSS - ext_ID_s - ID of the receiving robot (for comms)
     SSS - TTL - TTL flag
     S - last_queued - Y if this is the last bot in queue
@@ -200,6 +207,113 @@ void inglobate_external_team(char* ext_ID_s, char last_queued) {
   
 }
 
+bool duplicate_message_check(char* code_in, int ext_ID, int receiver_ID, int ttl, char* extra, char* buffer) {
+  /*
+  
+  We first devide the messages into different queues based on the code
+  We then check whether anothe message with the same structure exists
+  
+  Discard messages immediately when:
+    - I'm the sender
+    - ID not in my team_IDs list and it's not the external_team_connection_ID (we might want to reach a different team but not through this hop)
+  
+  */
+  if (ext_ID == my_ID) { 
+    /* message is from myself */
+    return true;
+  }
+  if (receiver_ID != my_ID && receiver_ID != 0) { //&& atoi(ext_hop_ID) != external_team_connection_ID)
+    /////////
+    // To Do: Consider hop between teams
+    /////////
+    return true;
+  }
+  
+  switch(code_in) // we could make this shorter but this way we reduce the computational time up to 4 times
+  {
+    case "DNB":
+      for (i=0; i<messages_loopback_size[0]; i++) {
+        // first check the sender
+        tmp = strncpy(tmp_s, messages_loopback[0][i]+3, 3);
+        if (atoi(tmp_s) == ext_ID) {
+          // second compare the receiver
+          tmp = strncpy(tmp_s, messages_loopback[0][i]+6, 3);
+          if (atoi(tmp_s) == receiver_ID) {
+            // skip ttl but further check the remaining part of the message
+            tmp = strcpy(tmp_s, messages_loopback[0][i]+12);
+            if (strcmp(tmp_s, extra) == 0) {
+              return true;
+            }
+          }
+        }
+      }
+      /* if we have reached this point means it's not a duplicate, save it */
+      strcpy(messages_loopback[0][messages_loopback_size[0]], buffer);
+      messages_loopback_size[0] += 1;
+      return false;
+    case "LJT":
+      for (i=0; i<messages_loopback_size[1]; i++) {
+        // first check the sender
+        tmp = strncpy(tmp_s, messages_loopback[1][i]+3, 3);
+        if (atoi(tmp_s) == ext_ID) {
+          // second compare the receiver
+          tmp = strncpy(tmp_s, messages_loopback[1][i]+6, 3);
+          if (atoi(tmp_s) == receiver_ID) {
+            // skip ttl but further check the remaining part of the message
+            tmp = strcpy(tmp_s, messages_loopback[1][i]+12);
+            if (strcmp(tmp_s, extra) == 0) {
+              return true;
+            }
+          }
+        }
+      }
+      /* if we have reached this point means it's not a duplicate, save it */
+      strcpy(messages_loopback[1][messages_loopback_size[1]], buffer);
+      messages_loopback_size[1] += 1;
+      return false;
+    case "TTT":
+      for (i=0; i<messages_loopback_size[2]; i++) {
+        // first check the sender
+        tmp = strncpy(tmp_s, messages_loopback[2][i]+3, 3);
+        if (atoi(tmp_s) == ext_ID) {
+          // second compare the receiver
+          tmp = strncpy(tmp_s, messages_loopback[2][i]+6, 3);
+          if (atoi(tmp_s) == receiver_ID) {
+            // skip ttl but further check the remaining part of the message
+            tmp = strcpy(tmp_s, messages_loopback[2][i]+12);
+            if (strcmp(tmp_s, extra) == 0) {
+              return true;
+            }
+          }
+        }
+      }
+      /* if we have reached this point means it's not a duplicate, save it */
+      strcpy(messages_loopback[2][messages_loopback_size[2], buffer);
+      messages_loopback_size[2] += 1;
+      return false;
+    case "ITM":
+      for (i=0; i<messages_loopback_size[3]; i++) {
+        // first check the sender
+        tmp = strncpy(tmp_s, messages_loopback[3][i]+3, 3);
+        if (atoi(tmp_s) == ext_ID) {
+          // second compare the receiver
+          tmp = strncpy(tmp_s, messages_loopback[3][i]+6, 3);
+          if (atoi(tmp_s) == receiver_ID) {
+            // skip ttl but further check the remaining part of the message
+            tmp = strcpy(tmp_s, messages_loopback[3][i]+12);
+            if (strcmp(tmp_s, extra) == 0) {
+              return true;
+            }
+          }
+        }
+      }
+      /* if we have reached this point means it's not a duplicate, save it */
+      strcpy(messages_loopback[3][messages_loopback_size[3]], buffer);
+      messages_loopback_size[3] += 1;
+      return false;
+  }
+}
+
 void handle_message(char* buffer) {
   /*
   
@@ -207,7 +321,7 @@ void handle_message(char* buffer) {
   
   SSS - code_in - message code as string
   SSS - ext_ID_s - external ID as string (sender)
-  SSS - receiver_ID - ID of the receiver as string
+  SSS - receiver_ID_s - ID of the receiver as string
   SSS - TTL - TTL
   
   */
@@ -218,14 +332,12 @@ void handle_message(char* buffer) {
   strncpy(code_in, buffer, 3);
   strncpy(ext_ID_s, buffer+3, 3);
   ext_ID = atoi(ext_ID_s);
-  strncpy(receiver_ID, buffer+6, 3);
+  strncpy(receiver_ID_s, buffer+6, 3);
+  receiver_ID = atoi(receiver_ID_s);
   strncpy(ttl_s, buffer+9, 3);
   ttl = atoi(ttl_s);
   
-  if (atoi(receiver_ID) != my_ID || atoi(receiver_ID) != 0) { // might add relay and or TTL
-    /* message is neither for this robot nor for broadcast */
-    return;
-  }
+  duplicate_message = duplicate_message_check(code_in, ext_ID, receiver_ID, ttl);
   
   ///////////
   //
@@ -367,7 +479,9 @@ void reset_simulation(void){
   field = wb_supervisor_node_get_field(node, "rotation");
   rotation[3] = (float)rand() / (float)(RAND_MAX / 6.28319);
   wb_supervisor_field_set_sf_rotation(field, rotation);
-        
+  leader_ID = my_ID;
+  team_player = false;
+  leader = true;
 }
 
 ////////////////////////////////////////////
@@ -463,7 +577,7 @@ int main() {
   
   /* Initialization and initial reset*/
   my_ID = atoi(wb_robot_get_name() + 5);
-  const char *my_name = wb_robot_get_name();
+  const char* my_ID_s = wb_robot_get_name();
   
   const WbNodeRef root_node = wb_supervisor_node_get_root();
   const WbFieldRef root_children_field = wb_supervisor_node_get_field(root_node, "children");
