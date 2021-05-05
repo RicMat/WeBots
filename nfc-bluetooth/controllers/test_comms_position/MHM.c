@@ -4,26 +4,31 @@
 
 #include "MHM.h"
 
-void construct_discovery_message(int my_ID, char team_player, char leader) {
-  strcpy(message, "DNB");
+void construct_discovery_message(int my_ID, char team_player, char leader, int team_size, char* leader_ID_s) {
+  strcpy(message, "DNB"); // code_in
   sprintf(tmp_s, "%03d", my_ID);
-  strcat(message, tmp_s);
-  strcat(message, "000");
+  strcat(message, tmp_s); // sender
+  strcat(message, "000"); // receiver
+  strcat(message, "000"); // TTL
   
-  if (team_player) {
+  if (team_player) { // team_player
     strcat(message, "Y"); 
   }
   else {
     strcat(message, "N");
   }
   
-  if (leader) {
+  sprintf(tmp_s, "%1d", idx_team+1);
+  strcat(message, tmp_s); // team_size
+  
+  if (leader) { // leader - if I'm leader of my team
     strcat(message, "Y");
   }
   else {
     strcat(message, "N");
   }
-  
+  // printf("%d sending DNB %s\n", my_ID, leader_ID_s);
+  strcat(message, leader_ID_s); // leader_ID_s
 }
 
 void construct_join_team_message(char* sender, char* receiver, char* TTL, char last_queued) {

@@ -17,6 +17,7 @@
 #include <webots/receiver.h>
 #include <webots/robot.h>
 #include <webots/supervisor.h>
+#include <webots/led.h>
 #include <string.h>
 
 // Custom libraries
@@ -36,7 +37,8 @@
 #define TIME_STEP 64  // [ms]
 #define COMMUNICATION_CHANNEL 1
 #define COMMUNICATION_CHANNEL_BT 2
-#define FLOOR_SIZE 10.0
+#define FLOOR_SIZE 1.0
+#define NB_LEDS 8
 
 // 8 IR proximity sensors
 #define NB_DIST_SENS 8
@@ -65,6 +67,9 @@ WbDeviceTag emitter_nfc, receiver_nfc, emitter_bt, receiver_bt;
 
 // Prox sensors
 WbDeviceTag ps[NB_DIST_SENS];
+
+// LEDs
+WbDeviceTag led[NB_LEDS];
 
 // Supervisor
 WbNodeRef node;
@@ -148,6 +153,7 @@ void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
     S - last_queued - Y if this is the last bot in queue
     
   */
+  printf("%d joining external team\n", my_ID);
   if (idx_team > 0) {
     construct_join_team_message(my_ID_s, ext_ID_s, "000", 'N');
   }
@@ -155,6 +161,10 @@ void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
     construct_join_team_message(my_ID_s, ext_ID_s, "000", 'Y');
   }
   wb_emitter_send(emitter_bt, message, strlen(message) + 1);
+
+  /* update my stats - we are for sure not the leader */
+  leader = false;
+  leader_ID = atoi(ext_leader_ID_s);
   
   for (i=0; i<idx_team; i++) {
     // send message to the bot we are joining
@@ -174,8 +184,7 @@ void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
     wb_emitter_send(emitter_bt, message, strlen(message) + 1);
     ////////
     // To Do: Update Location
-    ////////
-    
+    //////// 
   }
 }
 
@@ -346,6 +355,7 @@ void handle_message(char* buffer) {
   // To Do: if message already received discard it. Consider also case where the sender id is different but the message is the same
   
   strncpy(code_in, buffer, 3);
+  // printf("%d received %s\n", my_ID, code_in);
   strncpy(ext_ID_s, buffer+3, 3);
   ext_ID = atoi(ext_ID_s);
   strncpy(receiver_ID_s, buffer+6, 3);
@@ -384,14 +394,18 @@ void handle_message(char* buffer) {
     SSS - ext_leader_ID_s - ID of the external team's leader
     
     */
+    // printf("message %s\n", buffer);
     case 0: //"DNB" - Discover New Bot
-      ext_team_player = buffer[12-1];
-      ext_team_size = buffer[13-1];
-      ext_leader = buffer[14-1];
+      ext_team_player = buffer[12];
+      ext_team_size = buffer[13];
+      ext_leader = buffer[14];
       strncpy(ext_leader_ID_s, buffer+15, 3);
+      // printf("%d ext_leader_ID_s %s\n", my_ID, ext_leader_ID_s);
       ext_leader_ID = atoi(ext_leader_ID_s);
       
       tmp = ext_team_size - '0';
+      
+      // printf("ext_team_size %s\n", &ext_team_size);
       if (tmp + team_size > 7) {
         // To Do:
         // reject_union_team();
@@ -399,17 +413,24 @@ void handle_message(char* buffer) {
         break;
       }
       
+      in_queue = false;
       for (i=0; i<idx_team; i++) {
         if(team_IDs[i] == ext_ID) {
+          // printf("in queue %d\n", team_IDs[i]);
           in_queue = true; // discard this communication
         }
       }
-      if (! in_queue) {
+      
+      // printf("in_queue %d\n", in_queue);
+      // printf("message %s\n", buffer);
+      if (!in_queue) {
+        // printf("leader_ID %d ext_leader_ID %d\n", leader_ID, ext_leader_ID);
         /* New robot - process received information */
         // team_IDs[idx] = ext_ID;
         if (ext_team_player) {
           /* external bot has a team */
           if (leader_ID < ext_leader_ID) {
+            // printf("%d    %d\n", leader_ID, ext_leader_ID);
             /* inglobate other team */
             /* to be done at message level - LJT message */
             break;
@@ -417,7 +438,11 @@ void handle_message(char* buffer) {
           else {
             /* join other team */
             /* sends a series of LJT messages for each bot in the team */
+            // printf("joining ext team\n");
+            printf("%d check before %d\n", my_ID, leader);
             join_external_team(ext_ID_s, ext_leader_ID_s);
+            printf("%d check after %d\n", my_ID, leader);
+
           }
         }
         else {
@@ -445,7 +470,9 @@ void handle_message(char* buffer) {
     S - last_queued - Y if this is the last bot in queue of the external bot
     
     */ 
-    case 1: //"LJT" - List of other team-members to Join the Team
+    case 1: //"LJT" - List of other team-members to Join my Team
+      // printf("received LJT\n");
+      // printf("message %s\n", buffer);
       last_queued = buffer[12-1];
       inglobate_external_team(ext_ID_s, last_queued);
       break;
@@ -457,9 +484,10 @@ void handle_message(char* buffer) {
     
     */
     case 2: //"TTT" - Transfer To the new Team
+      // printf("received TTT\n");
       strncpy(leader_ID_s, buffer+12, 3);
       leader_ID = atoi(leader_ID_s); // set up new leader
-      
+      leader = false;
       //////////////
       // To Do: set up new location
       //////////////
@@ -472,6 +500,7 @@ void handle_message(char* buffer) {
     
     */
     case 3: //"ITM" - Inglobate Team Member
+      // printf("received ITM\n");
       team_IDs[idx_team] = atoi(ext_ID_s);
       idx_team += 1;
       
@@ -500,6 +529,7 @@ void reset_simulation(void){
   rotation[3] = (float)rand() / (float)(RAND_MAX / 6.28319);
   wb_supervisor_field_set_sf_rotation(field, rotation);
   leader_ID = my_ID;
+  sprintf(leader_ID_s, "%03d", my_ID);
   team_player = false;
   leader = true;
 }
@@ -554,9 +584,6 @@ int main() {
   
   /* intialize Webots */
   wb_robot_init();
-  while(1) {
-    printf("aaaa\n");
-  }
   
   /* Prox Sensors */
   for (i = 0; i < NB_DIST_SENS; i++) {
@@ -581,7 +608,6 @@ int main() {
   turn = (1.0 + ((float)(rand() % 6) / 10.0));
   
   /* BT Comms */
-  
   emitter_bt = wb_robot_get_device("bt_e");
   wb_emitter_set_channel(emitter_bt, COMMUNICATION_CHANNEL_BT);
   wb_emitter_set_range(emitter_bt, 1.0);
@@ -598,9 +624,15 @@ int main() {
   // receiver_nfc = wb_robot_get_device("nfc_r");
   // wb_receiver_enable(receiver_nfc, TIME_STEP);
   
+  /* LEDs */
+  for (i = 0; i < NB_LEDS; i++) {
+    sprintf(name, "led%d", i);
+    led[i] = wb_robot_get_device(name); /* get a handler to the sensor */
+  }
+  
   /* Initialization and initial reset*/
   my_ID = atoi(wb_robot_get_name() + 5);
-  strcpy(my_ID_s, wb_robot_get_name());
+  sprintf(my_ID_s, "%03d", my_ID);
   
   const WbNodeRef root_node = wb_supervisor_node_get_root();
   const WbFieldRef root_children_field = wb_supervisor_node_get_field(root_node, "children");
@@ -686,7 +718,9 @@ int main() {
     
     /* Initial message exchange - to be repeated every step to engage new bots */ 
     if (!team_player) {
-      construct_discovery_message(my_ID, team_player, leader); // saves the desired string in variable message
+      for (i=0; i<NB_LEDS; i++)
+        wb_led_set(led[i], 2);
+      construct_discovery_message(my_ID, team_player, leader, idx_team, leader_ID_s); // saves the desired string in variable message
     }
     
     // if (! have_leader) { 
@@ -734,15 +768,18 @@ int main() {
       // }
     // }  
     
-    // Set wheel speeds
-    // if (my_ID != 10) {
-      // wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]); // speed[LEFT]);
-      // wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]); // speed[RIGHT]);
-    // }
-    // else {
-      // wb_motor_set_velocity(left_motor, 0);
-      // wb_motor_set_velocity(right_motor, 0);
-    // }
+    /* Set wheel speeds */
+    // printf("idx_team %d\n", idx_team);
+    if (idx_team != 1 || (idx_team == 1 && leader)) {
+      // printf("%d robot in %d leader %d\n", my_ID, team_IDs[0], leader);
+      wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]); // speed[LEFT]);
+      wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]); // speed[RIGHT]);
+    }
+    else {
+      // printf("%d robot in %d\n", my_ID, team_IDs[0]);
+      wb_motor_set_velocity(left_motor, 0);
+      wb_motor_set_velocity(right_motor, 0);
+    }
   }
 
   fclose(fpt);

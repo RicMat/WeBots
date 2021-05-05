@@ -6,7 +6,7 @@ WorldInfo {
 }
 Viewpoint {
   orientation 0.057140279994103614 -0.7671982617138776 -0.6388597777489206 3.278615875664352
-  position 0.14038598131892208 7.864288542617744 -1.7148314406738918
+  position 0.013615739598712448 3.9837329793066254 -1.0118201360008159
 }
 TexturedBackground {
 }
@@ -14,8 +14,12 @@ TexturedBackgroundLight {
 }
 RectangleArena {
   rotation 1 0 0 0
-  floorSize 10 10
   floorTileSize 0.25 0.25
+  floorAppearance Parquetry {
+    type "dark strip"
+    colorOverride 0.8 0.8 0.8
+    IBLStrength 5
+  }
 }
 SolidPipe {
   translation 6.32955 -8.88178e-16 -3.06748

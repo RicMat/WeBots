@@ -1,1 +1,1 @@
-Run1 Size:10.0
+Run1 Size:1.0

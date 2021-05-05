@@ -12,7 +12,7 @@
 #define TIME_STEP 64  // [ms]
 #define COMMUNICATION_CHANNEL 1
 #define COMMUNICATION_CHANNEL_BT 2
-#define FLOOR_SIZE 10.0
+#define FLOOR_SIZE 1.0
 
 // 8 IR proximity sensors
 #define NB_DIST_SENS 8
