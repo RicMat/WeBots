@@ -1,9 +1,13 @@
 /* Messages Handligh Module */
+#include <stdio.h>
+#include <string.h>
+
 #include "MHM.h"
 
 void construct_discovery_message(int my_ID, char team_player, char leader) {
   strcpy(message, "DNB");
-  strcat(message, "%03d", my_ID);
+  sprintf(tmp_s, "%03d", my_ID);
+  strcat(message, tmp_s);
   strcat(message, "000");
   
   if (team_player) {
@@ -22,7 +26,7 @@ void construct_discovery_message(int my_ID, char team_player, char leader) {
   
 }
 
-void construct_join_team_message(int sender, char* receiver, char* TTL, char last_queued) {
+void construct_join_team_message(char* sender, char* receiver, char* TTL, char last_queued) {
   /* join other bot in a new team */
   /* sends a series of LJT messages for each bot in the team */
   /* if not the leader, update all the slaves of the change */
@@ -37,10 +41,10 @@ void construct_join_team_message(int sender, char* receiver, char* TTL, char las
     
   */
   strcpy(message, "LJT");
-  strcat(message, "%03d", sender);
+  strcat(message, sender);
   strcat(message, receiver);
   strcat(message, TTL);
-  strcat(message, last_queued);
+  strcat(message, &last_queued);
   
 }
 
@@ -51,6 +55,8 @@ void construct_transfer_team_message(char* sender, char* receiver, char* TTL, ch
   /* message structure: 
     
     SSS - code_in - code of the message
+    SSS - 
+    SSS - 
     SSS - 
     SSS - ext_leader_ID - ID of the external leader (new leader)
     

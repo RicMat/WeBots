@@ -35,7 +35,7 @@
 ###
 ### ---- C Sources ----
 ### if your program uses several C source files:
-C_SOURCES = test_comms_position.c OAM.c 
+C_SOURCES = test_comms_position.c OAM.c MHM.c
 ###
 ### ---- C++ Sources ----
 ### if your program uses several C++ source files:

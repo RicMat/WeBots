@@ -17,7 +17,7 @@
 #include <webots/receiver.h>
 #include <webots/robot.h>
 #include <webots/supervisor.h>
-#include <cstring.h>
+#include <string.h>
 
 // Custom libraries
 #include "OAM.h"
@@ -72,7 +72,7 @@ WbFieldRef field;
 
 // Variables
 FILE *fpt;
-char name[20], filename[20], message[34+1], tmp_s[3+1];
+char name[20], filename[20], message[34+1];
 int ps_offset[NB_DIST_SENS] = {0, 0, 0, 0, 0, 0, 0, 0}, i, speed[2];
 int rand_num, num, my_ID, counter = 0, run = 1, team_size = 1;
 float turn; 
@@ -105,18 +105,18 @@ void ObstacleAvoidanceModule (void) {
 // MHM - Message Handling Module
 ////////////////////////////////////////////
 
-char code_in[4], ext_ID_s[4], receiver_ID_s[4], leader_ID_s[4], ext_leader_ID[4];
-char ttl_s[4], extra[22+1], tmp_s[34+1];
+char code_in[4], ext_ID_s[4], my_ID_s[4], receiver_ID_s[4], leader_ID_s[4], ext_leader_ID_s[4];
+char ttl_s[4], extra[22+1], tmp_s[34+1], tmp_ss[4];
 char ext_team_player, ext_leader, last_queued, ext_team_size;
-bool leader = false, team_player = false, in_queue = false;
+bool leader = false, team_player = false, in_queue = false, duplicate_message = false;
 int leader_ID = 0, team_ID = 0, ext_leader_ID = 0, idx_comms = 0, idx_team = 0, ext_ID = 0;
 int receiver_ID = 0, external_team_connection_ID = 0, tmp = 0, ttl = 0;
 int comms_queue[7], team_IDs[7];
 // comms queue is useless as we are using mesh flooding so it equals to seending broadcast with ttl = 0
 
 // Stored messages - Could use an Hash Table
-char messages_lookback[4][34+1];
-int messages_loopback_size = [0, 0, 0, 0];
+char messages_lookback[4][SIZE][34+1];
+int messages_lookback_size[4] = { 0 };
 
 
 
@@ -133,7 +133,7 @@ int messages_loopback_size = [0, 0, 0, 0];
 
 
 
-void join_external_team(char* ext_ID_s, char* ext_leader) {
+void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
   /* join other bot in a new team */
   /* sends a series of LJT messages for each bot in the team */
   /* if not the leader, update all the slaves of the change */
@@ -149,10 +149,10 @@ void join_external_team(char* ext_ID_s, char* ext_leader) {
     
   */
   if (idx_team > 0) {
-    construct_join_team_message(my_ID_s, ext_ID_s, "N");
+    construct_join_team_message(my_ID_s, ext_ID_s, "000", 'N');
   }
   else {
-    construct_join_team_message(my_ID_s, ext_ID_s, "Y");
+    construct_join_team_message(my_ID_s, ext_ID_s, "000", 'Y');
   }
   wb_emitter_send(emitter_bt, message, strlen(message) + 1);
   
@@ -160,16 +160,17 @@ void join_external_team(char* ext_ID_s, char* ext_leader) {
     // send message to the bot we are joining
     // sprintf(tmp_message, "LJT%03d%sN", team_IDs[i], ext_ID_s);
     
+    snprintf(tmp_ss, 3, "%03d", team_IDs[i]);
     if(i == idx_team-1) {
-      construct_join_team_message(team_IDs[i], ext_ID_s, "Y");
+      construct_join_team_message(tmp_ss, ext_ID_s, "000", 'Y');
     }
     else {
-      construct_join_team_message(team_IDs[i], ext_ID_s, "N");
+      construct_join_team_message(tmp_ss, ext_ID_s, "000", 'N');
     }
     wb_emitter_send(emitter_bt, message, strlen(message) + 1);
     
     // send message to the bot we are transferring
-    construct_transfer_team_message(my_ID_s, team_IDs[i], ext_leader_ID);
+    construct_transfer_team_message(my_ID_s, tmp_ss, "003", ext_leader_ID_s);
     wb_emitter_send(emitter_bt, message, strlen(message) + 1);
     ////////
     // To Do: Update Location
@@ -207,6 +208,19 @@ void inglobate_external_team(char* ext_ID_s, char last_queued) {
   
 }
 
+int hash_codes(char* code_in) {
+  if (strcmp(code_in, "DNB") == 0)
+    return 0;
+  else if (strcmp(code_in, "LJT") == 0)
+    return 1;
+  else if (strcmp(code_in, "TTT") == 0)
+    return 2;
+  else if (strcmp(code_in, "ITM") == 0)
+    return 3;
+  else
+    return -1;
+}
+
 bool duplicate_message_check(char* code_in, int ext_ID, int receiver_ID, int ttl, char* extra, char* buffer) {
   /*
   
@@ -229,18 +243,18 @@ bool duplicate_message_check(char* code_in, int ext_ID, int receiver_ID, int ttl
     return true;
   }
   
-  switch(code_in) // we could make this shorter but this way we reduce the computational time up to 4 times
+  switch(hash_codes(code_in)) // we could make this shorter but this way we reduce the computational time up to 4 times
   {
-    case "DNB":
-      for (i=0; i<messages_loopback_size[0]; i++) {
+    case 0: //"DNB"
+      for (i=0; i<messages_lookback_size[0]; i++) {
         // first check the sender
-        tmp = strncpy(tmp_s, messages_loopback[0][i]+3, 3);
+        strncpy(tmp_s, messages_lookback[0][i]+3, 3);
         if (atoi(tmp_s) == ext_ID) {
           // second compare the receiver
-          tmp = strncpy(tmp_s, messages_loopback[0][i]+6, 3);
+          strncpy(tmp_s, messages_lookback[0][i]+6, 3);
           if (atoi(tmp_s) == receiver_ID) {
             // skip ttl but further check the remaining part of the message
-            tmp = strcpy(tmp_s, messages_loopback[0][i]+12);
+            strcpy(tmp_s, messages_lookback[0][i]+12);
             if (strcmp(tmp_s, extra) == 0) {
               return true;
             }
@@ -248,19 +262,19 @@ bool duplicate_message_check(char* code_in, int ext_ID, int receiver_ID, int ttl
         }
       }
       /* if we have reached this point means it's not a duplicate, save it */
-      strcpy(messages_loopback[0][messages_loopback_size[0]], buffer);
-      messages_loopback_size[0] += 1;
+      strcpy(messages_lookback[0][messages_lookback_size[0]], buffer);
+      messages_lookback_size[0] += 1;
       return false;
-    case "LJT":
-      for (i=0; i<messages_loopback_size[1]; i++) {
+    case 1: //"LJT"
+      for (i=0; i<messages_lookback_size[1]; i++) {
         // first check the sender
-        tmp = strncpy(tmp_s, messages_loopback[1][i]+3, 3);
+        strncpy(tmp_s, messages_lookback[1][i]+3, 3);
         if (atoi(tmp_s) == ext_ID) {
           // second compare the receiver
-          tmp = strncpy(tmp_s, messages_loopback[1][i]+6, 3);
+          strncpy(tmp_s, messages_lookback[1][i]+6, 3);
           if (atoi(tmp_s) == receiver_ID) {
             // skip ttl but further check the remaining part of the message
-            tmp = strcpy(tmp_s, messages_loopback[1][i]+12);
+            strcpy(tmp_s, messages_lookback[1][i]+12);
             if (strcmp(tmp_s, extra) == 0) {
               return true;
             }
@@ -268,19 +282,19 @@ bool duplicate_message_check(char* code_in, int ext_ID, int receiver_ID, int ttl
         }
       }
       /* if we have reached this point means it's not a duplicate, save it */
-      strcpy(messages_loopback[1][messages_loopback_size[1]], buffer);
-      messages_loopback_size[1] += 1;
+      strcpy(messages_lookback[1][messages_lookback_size[1]], buffer);
+      messages_lookback_size[1] += 1;
       return false;
-    case "TTT":
-      for (i=0; i<messages_loopback_size[2]; i++) {
+    case 2: //"TTT"
+      for (i=0; i<messages_lookback_size[2]; i++) {
         // first check the sender
-        tmp = strncpy(tmp_s, messages_loopback[2][i]+3, 3);
+        strncpy(tmp_s, messages_lookback[2][i]+3, 3);
         if (atoi(tmp_s) == ext_ID) {
           // second compare the receiver
-          tmp = strncpy(tmp_s, messages_loopback[2][i]+6, 3);
+          strncpy(tmp_s, messages_lookback[2][i]+6, 3);
           if (atoi(tmp_s) == receiver_ID) {
             // skip ttl but further check the remaining part of the message
-            tmp = strcpy(tmp_s, messages_loopback[2][i]+12);
+            strcpy(tmp_s, messages_lookback[2][i]+12);
             if (strcmp(tmp_s, extra) == 0) {
               return true;
             }
@@ -288,19 +302,19 @@ bool duplicate_message_check(char* code_in, int ext_ID, int receiver_ID, int ttl
         }
       }
       /* if we have reached this point means it's not a duplicate, save it */
-      strcpy(messages_loopback[2][messages_loopback_size[2], buffer);
-      messages_loopback_size[2] += 1;
+      strcpy(messages_lookback[2][messages_lookback_size[2]], buffer);
+      messages_lookback_size[2] += 1;
       return false;
-    case "ITM":
-      for (i=0; i<messages_loopback_size[3]; i++) {
+    case 3: //"ITM"
+      for (i=0; i<messages_lookback_size[3]; i++) {
         // first check the sender
-        tmp = strncpy(tmp_s, messages_loopback[3][i]+3, 3);
+        strncpy(tmp_s, messages_lookback[3][i]+3, 3);
         if (atoi(tmp_s) == ext_ID) {
           // second compare the receiver
-          tmp = strncpy(tmp_s, messages_loopback[3][i]+6, 3);
+          strncpy(tmp_s, messages_lookback[3][i]+6, 3);
           if (atoi(tmp_s) == receiver_ID) {
             // skip ttl but further check the remaining part of the message
-            tmp = strcpy(tmp_s, messages_loopback[3][i]+12);
+            strcpy(tmp_s, messages_lookback[3][i]+12);
             if (strcmp(tmp_s, extra) == 0) {
               return true;
             }
@@ -308,8 +322,10 @@ bool duplicate_message_check(char* code_in, int ext_ID, int receiver_ID, int ttl
         }
       }
       /* if we have reached this point means it's not a duplicate, save it */
-      strcpy(messages_loopback[3][messages_loopback_size[3]], buffer);
-      messages_loopback_size[3] += 1;
+      strcpy(messages_lookback[3][messages_lookback_size[3]], buffer);
+      messages_lookback_size[3] += 1;
+      return false;
+    default:
       return false;
   }
 }
@@ -337,8 +353,11 @@ void handle_message(char* buffer) {
   strncpy(ttl_s, buffer+9, 3);
   ttl = atoi(ttl_s);
   
-  duplicate_message = duplicate_message_check(code_in, ext_ID, receiver_ID, ttl);
+  duplicate_message = duplicate_message_check(code_in, ext_ID, receiver_ID, ttl, buffer+12, buffer);
   
+  if (duplicate_message) {
+    return;
+  }
   ///////////
   //
   // To Do: increase team_size
@@ -347,12 +366,13 @@ void handle_message(char* buffer) {
   
   if (ttl > 0) {
     strncpy(message, buffer, 9);
-    strcat(message, "%03d", ttl-1);
-    strcat(message, "%s", buffer+12);
+    sprintf(tmp_s, "%03d", ttl-1);
+    strcat(message, tmp_s);
+    strcat(message, buffer+12);
     wb_emitter_send(emitter_bt, message, strlen(message) + 1);
   }
   
-  switch(code_in)
+  switch(hash_codes(code_in))
   {
     /* 
     
@@ -364,17 +384,17 @@ void handle_message(char* buffer) {
     SSS - ext_leader_ID_s - ID of the external team's leader
     
     */
-    case "DNB": // Discover New Bot
-      strncpy(ext_team_player, buffer+12, 1);
-      strncpy(ext_team_size, buffer+13, 1);
-      strncpy(ext_leader, buffer+14, 1);
+    case 0: //"DNB" - Discover New Bot
+      ext_team_player = buffer[12-1];
+      ext_team_size = buffer[13-1];
+      ext_leader = buffer[14-1];
       strncpy(ext_leader_ID_s, buffer+15, 3);
       ext_leader_ID = atoi(ext_leader_ID_s);
       
-      tmp = atoi(ext_team_size);
+      tmp = ext_team_size - '0';
       if (tmp + team_size > 7) {
         // To Do:
-        reject_union_team();
+        // reject_union_team();
         // To Do: add the bot to external queue
         break;
       }
@@ -425,8 +445,8 @@ void handle_message(char* buffer) {
     S - last_queued - Y if this is the last bot in queue of the external bot
     
     */ 
-    case "LJT": // List of other team-members to Join the Team
-      strncpy(last_queued, buffer+12, 1);
+    case 1: //"LJT" - List of other team-members to Join the Team
+      last_queued = buffer[12-1];
       inglobate_external_team(ext_ID_s, last_queued);
       break;
     /*
@@ -436,7 +456,7 @@ void handle_message(char* buffer) {
     SSS - external_leader_ID - ID of the leader of the external team
     
     */
-    case "TTT": // Transfer To the new Team
+    case 2: //"TTT" - Transfer To the new Team
       strncpy(leader_ID_s, buffer+12, 3);
       leader_ID = atoi(leader_ID_s); // set up new leader
       
@@ -451,7 +471,7 @@ void handle_message(char* buffer) {
     SSS - ext_ID_s - ID of the external bot we are inglobating
     
     */
-    case "ITM": // Inglobate Team Member
+    case 3: //"ITM" - Inglobate Team Member
       team_IDs[idx_team] = atoi(ext_ID_s);
       idx_team += 1;
       
@@ -534,6 +554,9 @@ int main() {
   
   /* intialize Webots */
   wb_robot_init();
+  while(1) {
+    printf("aaaa\n");
+  }
   
   /* Prox Sensors */
   for (i = 0; i < NB_DIST_SENS; i++) {
@@ -577,7 +600,7 @@ int main() {
   
   /* Initialization and initial reset*/
   my_ID = atoi(wb_robot_get_name() + 5);
-  const char* my_ID_s = wb_robot_get_name();
+  strcpy(my_ID_s, wb_robot_get_name());
   
   const WbNodeRef root_node = wb_supervisor_node_get_root();
   const WbFieldRef root_children_field = wb_supervisor_node_get_field(root_node, "children");
@@ -678,34 +701,38 @@ int main() {
     /* Check for new messages and process them */
     while (wb_receiver_get_queue_length(receiver_bt) > 0) {
       const char *buffer = wb_receiver_get_data(receiver_bt);
-      handle_message(buffer);
+      handle_message((char*)buffer);
       wb_receiver_next_packet(receiver_bt);      
     }
     
     /* Move to location */
-    if (mtl_active) {
-      angle = angle_offset();
+    ///////
+    // To Do
+    ///////
+    
+    // if (mtl_active) {
+      // angle = angle_offset();
       
-      if (turn) { /* we are facing the right direction */
-        forward_move = false;
-        turn_towards_location();
-      }
-      else { /* turn until we face the right direction */
-        forward_move = true;
-      }
+      // if (turn) { /* we are facing the right direction */
+        // forward_move = false;
+        // turn_towards_location();
+      // }
+      // else { /* turn until we face the right direction */
+        // forward_move = true;
+      // }
       
-      if (forward_move) {
-        distance = calculate_distance_location();
-        wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]);
-        wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]);
-      }
+      // if (forward_move) {
+        // distance = calculate_distance_location();
+        // wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]);
+        // wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]);
+      // }
       
-      /* Arrived at location */
-      if (mtl_arrived) {
-        mtl_active = false;
-        mtl_arrived = false;
-      }
-    }  
+      // /* Arrived at location */
+      // if (mtl_arrived) {
+        // mtl_active = false;
+        // mtl_arrived = false;
+      // }
+    // }  
     
     // Set wheel speeds
     // if (my_ID != 10) {
