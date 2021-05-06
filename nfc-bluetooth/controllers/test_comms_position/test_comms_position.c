@@ -154,7 +154,7 @@ void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
     S - last_queued - Y if this is the last bot in queue
     
   */
-  printf("%d joining external team\n", my_ID);
+  // printf("%d joining external team\n", my_ID);
   if (idx_team > 0) {
     construct_join_team_message(my_ID_s, ext_ID_s, "000", 'N');
   }
@@ -365,10 +365,13 @@ void handle_message(char* buffer) {
   ttl = atoi(ttl_s);
   
   duplicate_message = duplicate_message_check(code_in, ext_ID, receiver_ID, ttl, buffer+12, buffer);
-  
+  printf("%d message %s\n", my_ID, buffer);
+  printf("%d in_queue %d\n", my_ID, duplicate_message);
+
   if (duplicate_message) {
     return;
   }
+
   ///////////
   //
   // To Do: increase team_size
@@ -382,7 +385,6 @@ void handle_message(char* buffer) {
     strcat(message, buffer+12);
     wb_emitter_send(emitter_bt, message, strlen(message) + 1);
   }
-  
   switch(hash_codes(code_in))
   {
     /* 
@@ -395,7 +397,6 @@ void handle_message(char* buffer) {
     SSS - ext_leader_ID_s - ID of the external team's leader
     
     */
-    // printf("message %s\n", buffer);
     case 0: //"DNB" - Discover New Bot
       ext_team_player = buffer[12];
       ext_team_size = buffer[13];
@@ -422,7 +423,10 @@ void handle_message(char* buffer) {
         }
       }
       
-      // printf("in_queue %d\n", in_queue);
+      if (!team_player) { // at this point for sure I'll either join or inglobate at least anothe robot
+        team_player = true;
+      }
+      
       // printf("message %s\n", buffer);
       if (!in_queue) {
         // printf("leader_ID %d ext_leader_ID %d\n", leader_ID, ext_leader_ID);
@@ -440,9 +444,9 @@ void handle_message(char* buffer) {
             /* join other team */
             /* sends a series of LJT messages for each bot in the team */
             // printf("joining ext team\n");
-            printf("%d check before %d\n", my_ID, leader);
+            // printf("%d check before %d\n", my_ID, leader);
             join_external_team(ext_ID_s, ext_leader_ID_s);
-            printf("%d check after %d\n", my_ID, leader);
+            // printf("%d check after %d\n", my_ID, leader);
 
           }
         }
@@ -631,6 +635,7 @@ int main() {
     leds[i] = wb_robot_get_device(name); /* get a handler to the sensor */
   }
   leddl = wb_robot_get_device("ledd");
+  wb_led_set(leddl, 1);
   
   /* Initialization and initial reset*/
   my_ID = atoi(wb_robot_get_name() + 5);
@@ -666,7 +671,7 @@ int main() {
   
   /* Main Loop */    
   while(wb_robot_step(TIME_STEP) != -1 && wb_robot_get_time() < (10800 * 5)) {  // Main loop - 5 times for max 3 hours each
-    
+    printf("%d new step\n", my_ID);
     /* Reset Simulation */
     if (wb_robot_get_time() >= (10800 * run)){
       reset_simulation(); // small probability of starting on the same point
@@ -719,11 +724,17 @@ int main() {
     /* one step in the future */
     
     /* Initial message exchange - to be repeated every step to engage new bots */ 
-    wb_led_set(leddl, 2);
     if (!team_player) {
       // for (i=0; i<NB_LEDS; i++)
         // wb_led_set(leds[1], 1);
       construct_discovery_message(my_ID, team_player, leader, idx_team, leader_ID_s); // saves the desired string in variable message
+      wb_emitter_send(emitter_bt, message, strlen(message) + 1);
+    }
+    else {
+      if (leader)
+        wb_led_set(leddl, 2);
+      else
+        wb_led_set(leddl, 3);
     }
     
     // if (! have_leader) { 
@@ -733,7 +744,6 @@ int main() {
     // else {
     
     // }
-    wb_emitter_send(emitter_bt, message, strlen(message) + 1);
     
     /* Check for new messages and process them */
     while (wb_receiver_get_queue_length(receiver_bt) > 0) {
@@ -772,7 +782,10 @@ int main() {
     // }  
     
     /* Set wheel speeds */
-    // printf("idx_team %d\n", idx_team);
+    printf("%d idx_team %d\n", my_ID, idx_team);
+    for (i=0; i<idx_team; i++)
+      printf("%d id %d\n", i, team_IDs[i]);
+    
     if (idx_team != 1 || (idx_team == 1 && leader)) {
       // printf("%d robot in %d leader %d\n", my_ID, team_IDs[0], leader);
       wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]); // speed[LEFT]);

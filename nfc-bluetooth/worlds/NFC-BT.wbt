@@ -6,7 +6,7 @@ WorldInfo {
 }
 Viewpoint {
   orientation 0.9313872633319591 -0.3262908409004956 -0.16140648328816137 5.3067332719823295
-  position 0.6509522202197291 1.6374477737061874 1.1907843289080453
+  position 0.845759592293656 2.3957832421469707 1.7359672069742866
 }
 TexturedBackground {
 }
@@ -148,7 +148,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 0 1 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE

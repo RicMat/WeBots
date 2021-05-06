@@ -27,7 +27,7 @@ void construct_discovery_message(int my_ID, char team_player, char leader, int t
   else {
     strcat(message, "N");
   }
-  // printf("%d sending DNB %s\n", my_ID, leader_ID_s);
+  printf("%d sending DNB\n", my_ID);
   strcat(message, leader_ID_s); // leader_ID_s
 }
 
@@ -50,6 +50,7 @@ void construct_join_team_message(char* sender, char* receiver, char* TTL, char l
   strcat(message, receiver);
   strcat(message, TTL);
   strcat(message, &last_queued);
+  // printf("sending %s  %c\n", message, last_queued);
   
 }
 
