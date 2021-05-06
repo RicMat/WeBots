@@ -69,7 +69,8 @@ WbDeviceTag emitter_nfc, receiver_nfc, emitter_bt, receiver_bt;
 WbDeviceTag ps[NB_DIST_SENS];
 
 // LEDs
-WbDeviceTag led[NB_LEDS];
+WbDeviceTag leds[NB_LEDS];
+WbDeviceTag leddl;
 
 // Supervisor
 WbNodeRef node;
@@ -627,8 +628,9 @@ int main() {
   /* LEDs */
   for (i = 0; i < NB_LEDS; i++) {
     sprintf(name, "led%d", i);
-    led[i] = wb_robot_get_device(name); /* get a handler to the sensor */
+    leds[i] = wb_robot_get_device(name); /* get a handler to the sensor */
   }
+  leddl = wb_robot_get_device("ledd");
   
   /* Initialization and initial reset*/
   my_ID = atoi(wb_robot_get_name() + 5);
@@ -717,9 +719,10 @@ int main() {
     /* one step in the future */
     
     /* Initial message exchange - to be repeated every step to engage new bots */ 
+    wb_led_set(leddl, 2);
     if (!team_player) {
-      for (i=0; i<NB_LEDS; i++)
-        wb_led_set(led[i], 2);
+      // for (i=0; i<NB_LEDS; i++)
+        // wb_led_set(leds[1], 1);
       construct_discovery_message(my_ID, team_player, leader, idx_team, leader_ID_s); // saves the desired string in variable message
     }
     

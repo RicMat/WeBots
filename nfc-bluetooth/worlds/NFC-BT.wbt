@@ -5,8 +5,8 @@ WorldInfo {
   lineScale 0.04
 }
 Viewpoint {
-  orientation 0.057140279994103614 -0.7671982617138776 -0.6388597777489206 3.278615875664352
-  position 0.013615739598712448 3.9837329793066254 -1.0118201360008159
+  orientation 0.9313872633319591 -0.3262908409004956 -0.16140648328816137 5.3067332719823295
+  position 0.6509522202197291 1.6374477737061874 1.1907843289080453
 }
 TexturedBackground {
 }
@@ -53,6 +53,45 @@ E-puck {
     1800000, 1800000, 1
   ]
   turretSlot [
+    LED {
+      translation 0 0.001 -0.01
+      children [
+        Group {
+          children [
+            Shape {
+              appearance PBRAppearance {
+                baseColor 0.74902 0.74902 0.74902
+                roughness 1
+                metalness 0
+              }
+              geometry DEF LED_SHAPE Sphere {
+                radius 0.01
+              }
+            }
+            PointLight {
+              attenuation 0 0 1
+              color 0 1 0
+              intensity 0.5
+              location 0 0.03 0
+              on FALSE
+              castShadows TRUE
+            }
+          ]
+        }
+      ]
+      name "ledd"
+      color [
+        1 0 0
+        0 1 0
+        0 0 1
+        1 1 0
+        0 1 1
+        1 0 1
+        1 0.647059 0
+        0.627451 0.12549 0.941176
+        0.545098 0.411765 0.0784314
+      ]
+    }
     GPS {
       translation 0 0.01 0
       scale 0.01 0.01 0.01
@@ -92,6 +131,45 @@ E-puck {
     1800000, 1800000, 2
   ]
   turretSlot [
+    LED {
+      translation 0 0.001 -0.01
+      children [
+        Group {
+          children [
+            Shape {
+              appearance PBRAppearance {
+                baseColor 0.74902 0.74902 0.74902
+                roughness 1
+                metalness 0
+              }
+              geometry DEF LED_SHAPE Sphere {
+                radius 0.01
+              }
+            }
+            PointLight {
+              attenuation 0 0 1
+              color 0 1 0
+              intensity 0.5
+              location 0 0.03 0
+              on FALSE
+              castShadows TRUE
+            }
+          ]
+        }
+      ]
+      name "ledd"
+      color [
+        1 0 0
+        0 1 0
+        0 0 1
+        1 1 0
+        0 1 1
+        1 0 1
+        1 0.647059 0
+        0.627451 0.12549 0.941176
+        0.545098 0.411765 0.0784314
+      ]
+    }
     GPS {
     }
     Compass {
