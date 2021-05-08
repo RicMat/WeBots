@@ -1,4 +1,4 @@
-<mxfile host="app.diagrams.net" modified="2021-05-08T17:20:33.743Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36" etag="gUmWUhP_dinVvT3qYiQW" version="14.6.11" type="github">
+<mxfile host="app.diagrams.net" modified="2021-05-08T17:22:16.603Z" agent="5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/90.0.4430.93 Safari/537.36" etag="qTAOvbk178-GYyezIAxx" version="14.6.11" type="github">
   <diagram id="C5RBs43oDa-KdzZeNtuy" name="Page-1">
     <mxGraphModel dx="946" dy="646" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
       <root>
@@ -30,20 +30,19 @@
         <mxCell id="ENMwsWSegeCv_cd2-ziw-6" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ENMwsWSegeCv_cd2-ziw-3" target="ENMwsWSegeCv_cd2-ziw-5">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
+        <mxCell id="ENMwsWSegeCv_cd2-ziw-45" value="Yes" style="edgeLabel;html=1;align=center;verticalAlign=middle;resizable=0;points=[];" vertex="1" connectable="0" parent="ENMwsWSegeCv_cd2-ziw-6">
+          <mxGeometry x="-0.1" y="3" relative="1" as="geometry">
+            <mxPoint as="offset" />
+          </mxGeometry>
+        </mxCell>
         <mxCell id="ENMwsWSegeCv_cd2-ziw-3" value="Battery &amp;gt; 0" style="rhombus;whiteSpace=wrap;html=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="180" y="240" width="80" height="80" as="geometry" />
         </mxCell>
-        <mxCell id="ENMwsWSegeCv_cd2-ziw-8" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ENMwsWSegeCv_cd2-ziw-5" target="ENMwsWSegeCv_cd2-ziw-7">
+        <mxCell id="ENMwsWSegeCv_cd2-ziw-44" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ENMwsWSegeCv_cd2-ziw-5" target="ENMwsWSegeCv_cd2-ziw-42">
           <mxGeometry relative="1" as="geometry" />
         </mxCell>
         <mxCell id="ENMwsWSegeCv_cd2-ziw-5" value="Distance values" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="160" y="360" width="120" height="40" as="geometry" />
-        </mxCell>
-        <mxCell id="ENMwsWSegeCv_cd2-ziw-15" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ENMwsWSegeCv_cd2-ziw-7" target="ENMwsWSegeCv_cd2-ziw-14">
-          <mxGeometry relative="1" as="geometry" />
-        </mxCell>
-        <mxCell id="ENMwsWSegeCv_cd2-ziw-7" value="Obstacle avoidance" style="rounded=1;whiteSpace=wrap;html=1;fontSize=12;glass=0;strokeWidth=1;shadow=0;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
-          <mxGeometry x="160" y="440" width="120" height="40" as="geometry" />
         </mxCell>
         <mxCell id="ENMwsWSegeCv_cd2-ziw-22" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ENMwsWSegeCv_cd2-ziw-29" target="ENMwsWSegeCv_cd2-ziw-21">
           <mxGeometry relative="1" as="geometry" />
@@ -135,6 +134,12 @@
         </mxCell>
         <mxCell id="ENMwsWSegeCv_cd2-ziw-41" value="We might consider coming back to the message queue and send help message and having the leader coordinate the movement" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;rounded=0;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
           <mxGeometry x="30" y="910" width="220" height="80" as="geometry" />
+        </mxCell>
+        <mxCell id="ENMwsWSegeCv_cd2-ziw-43" value="" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;" edge="1" parent="WIyWlLk6GJQsqaUBKTNV-1" source="ENMwsWSegeCv_cd2-ziw-42" target="ENMwsWSegeCv_cd2-ziw-14">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="ENMwsWSegeCv_cd2-ziw-42" value="Message workflow" style="shape=process;whiteSpace=wrap;html=1;backgroundOutline=1;" vertex="1" parent="WIyWlLk6GJQsqaUBKTNV-1">
+          <mxGeometry x="160" y="430" width="120" height="60" as="geometry" />
         </mxCell>
       </root>
     </mxGraphModel>
