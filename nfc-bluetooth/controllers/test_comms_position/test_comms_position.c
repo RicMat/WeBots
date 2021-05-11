@@ -72,6 +72,9 @@ WbDeviceTag ps[NB_DIST_SENS];
 WbDeviceTag leds[NB_LEDS];
 WbDeviceTag leddl;
 
+// Position
+WbDeviceTag gps, compass;
+
 // Supervisor
 WbNodeRef node;
 WbFieldRef field;
@@ -125,9 +128,15 @@ char ext_team_ID_s[4];
 bool relay = false;
 int ext_team_ID;
 
+/* Location */
+char x_ref_s[7+1], y_ref_s[7+1], my_team_ID[2];
+float x_ref_pos, y_ref_pos;
+int my_team_ID = 0;
+bool location_change = false, new_bot = false;
+
 /* Stored messages - Could use an Hash Table */
-char messages_lookback[4][SIZE][34+1];
-int messages_lookback_size[4] = { 0 };
+char messages_lookback[5][SIZE][34+1];
+int messages_lookback_size[5] = { 0 };
 
 
 
@@ -141,14 +150,25 @@ int messages_lookback_size[4] = { 0 };
 
 
 
+////////////////////////////////////////////////////////////
+
+///////////
+// I know my position
+// I know my position with respect to the position of the leader
+// I can retrieve the postion of the leader and communicate it to the other robot which in turn will communicate it to his team
+///////////
 
 
 
 void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
-  /* join other bot in a new team.
+  /* 
+  
+  join other bot in a new team.
   sends a series of LJT messages for each bot in the team 
   if not the leader - update all the slaves of the change
-  if the leader - update the status to slave */
+  if the leader - update the status to slave 
+  
+  */
   
   /* message structure: 
     
@@ -166,7 +186,7 @@ void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
     construct_join_team_message(my_ID_s, ext_ID_s, "000", 'Y');
   }
   wb_emitter_send(emitter_bt, message, strlen(message) + 1);
-
+  
   /* update my stats - we are for sure not the leader */
   leader = false;
   leader_ID = atoi(ext_leader_ID_s);
@@ -205,12 +225,7 @@ void inglobate_external_team(char* ext_ID_s, char last_queued) {
   */
   if (leader) {
     /* TTL set to 0 as it should reach every other bot in the team in a single hop */
-    construct_share_with_team_message("ITM", my_ID_s, "000", "000", ext_ID_s); 
-    
-    /////////
-    // To Do: add location info
-    /////////
-    
+    construct_share_with_team_message("ITM", my_ID_s, "000", "000", ext_ID_s);     
   }
   else {
     /* TTL set to 3 as it should be enough to travel the whole team */
@@ -238,6 +253,8 @@ int hash_codes(char* code_in) {
     return 2;
   else if (strcmp(code_in, "ITM") == 0)
     return 3;
+  else if (strcmp(code_in, "ILM") == 0)
+    return 4;
   else
     return -1;
 }
@@ -265,6 +282,10 @@ bool duplicate_message_check(char* code_in, int ext_ID, int receiver_ID, int ttl
     /////////
     return true;
   }
+  
+  ////////
+  // To Do: simplify: switch will set a variable number which is then used in a single structure instead of the whole
+  ////////
   
   switch(hash_codes(code_in)) // we could make this shorter but this way we reduce the computational time up to 4 times
   {
@@ -360,6 +381,29 @@ bool duplicate_message_check(char* code_in, int ext_ID, int receiver_ID, int ttl
       strcpy(messages_lookback[3][messages_lookback_size[3]], buffer);
       messages_lookback_size[3] += 1;
       return false;
+    case 4:
+      for (i=0; i<messages_lookback_size[4]; i++) {
+        // first check the sender
+        memset(tmp_s, 0, 34+1);
+        strncpy(tmp_s, messages_lookback[4][i]+3, 3);
+        if (atoi(tmp_s) == ext_ID) {
+          // second compare the receiver
+          memset(tmp_s, 0, 34+1);
+          strncpy(tmp_s, messages_lookback[4][i]+6, 3);
+          if (atoi(tmp_s) == receiver_ID) {
+            // skip ttl but further check the remaining part of the message
+            memset(tmp_s, 0, 34+1);
+            strcpy(tmp_s, messages_lookback[4][i]+12);
+            if (strcmp(tmp_s, extra) == 0) {
+              return true;
+            }
+          }
+        }
+      }
+      /* if we have reached this point means it's not a duplicate, save it */
+      strcpy(messages_lookback[4][messages_lookback_size[4]], buffer);
+      messages_lookback_size[4] += 1;
+      return false;
     default:
       return false;
   }
@@ -450,7 +494,7 @@ void handle_message(char* buffer) {
       if (tmp + team_size > 7) {
         // To Do:
         // reject_union_team();
-        // To Do: add the bot to external queue
+        // To Do: add the bot to external queue if free
         break;
       }
       
@@ -464,6 +508,12 @@ void handle_message(char* buffer) {
       if (!team_player) { // at this point for sure I'll either join or inglobate at least anothe robot
         team_player = true;
       }
+      
+      /* either case we assume initial reference position as our current position - assume we stop when meet another bot */
+      x_ref_pos =
+      y_ref_pos =
+      
+      new_bot = true;
       
       // printf("message %s\n", buffer);
       if (!in_queue) {
@@ -494,6 +544,7 @@ void handle_message(char* buffer) {
     case 1: //"LJT" - List of other team-members to Join my Team
       last_queued = buffer[12-1];
       inglobate_external_team(ext_ID_s, last_queued);
+      inform_new_location(ext_ID_s);
       break;
     /*
     
@@ -538,7 +589,32 @@ void handle_message(char* buffer) {
         team_IDs[idx_team] = atoi(tmp_ss);
         idx_team += 1;
       }
-    break; 
+    break;
+    /*
+    
+    Variable:
+    
+    SSSSSSS - x_ref_s - x coordinate of the leader
+    SSSSSSS - y_ref_s - y coordinate of the leader
+    S       - my_team_ID_s - ID given to me by the leader; based on this value I'll move to a certain location
+    
+    */
+    case 4:
+      strncpy(x_ref_s, buffer+12, 7);
+      x_ref = atof(x_ref_s);
+      strncpy(y_ref_s, buffer+19, 7);
+      y_ref = atof(y_ref_s);
+      strncpy(my_team_ID_s, buffer+26, 1);
+      my_team_ID = atoi(my_team_ID_s);
+            
+      if (leader) {
+        /* shouldn't be a possibility */
+        break;
+      }
+      else (
+        handle_position_f(x_ref, y_ref, my_team_ID);
+      }
+      break;
   } 
 }
 
@@ -547,6 +623,63 @@ void handle_message(char* buffer) {
 ////////////////////////////////////////////
 
 
+
+/////////////////////
+//
+// To Do: set initial ref position and update it once we get the DNB message
+//
+/////////////////////
+
+
+
+
+
+
+
+void handle_position_f(float x_ref, float y_ref, int my_team_ID) {
+  
+  switch(my_team_ID)
+  {
+    case 1:
+      x_ref -= 10;
+      break;
+    case 2:
+      x_ref += 10;
+      break;
+    case 3:
+      x_ref -= 5;
+      y_ref += 8.66;
+      break;
+    case 4:
+      x_ref += 5;
+      y_ref += 8.66;
+      break;
+    case 5:
+      x_ref -= 5;
+      y_ref -= 8.66;
+      break;
+    case 6:
+      x_ref += 5;
+      y_ref -= 8.66;
+      break;
+    default:
+      break;
+  }
+  
+  location_changed = true;
+  
+}
+
+void inform_new_location(ext_ID_s) {
+  /*
+  
+  we inform the new bot of it's new location in the team
+  even though we are not the leader, we know the current team_idx so we can share it
+  we also know the reference position for the leader and we can share it also
+  
+  */
+  
+}
 
 ////////////////////////////////////////////
 // RSM - Reset Simulation Module
@@ -667,6 +800,13 @@ int main() {
   leddl = wb_robot_get_device("ledd");
   wb_led_set(leddl, 1);
   
+  /* GPS and compass */
+  gps = wb_robot_get_device("gps");
+  wb_gps_enable(gps, TIME_STEP);
+  
+  compass = wb_robot_get_device("compass");
+  wb_compass_enable(compass, TIME_STEP);
+  
   /* Initialization and initial reset*/
   my_ID = atoi(wb_robot_get_name() + 5);
   sprintf(my_ID_s, "%03d", my_ID);
@@ -749,8 +889,10 @@ int main() {
     if (team_player) {
       if (leader)
         wb_led_set(leddl, 2);
-      else
+      else if (relay)
         wb_led_set(leddl, 3);
+      else
+        wb_led_set(leddl, 4);
     }
     
     /* Check for new messages and process them */
@@ -761,6 +903,13 @@ int main() {
     }
     
     /* Move to location */
+    if (location_change) {
+      /* calculate necessary movement */
+      
+      /* if arrived reset the flag */
+      
+    }
+    
     ///////
     // To Do
     ///////
@@ -808,3 +957,13 @@ int main() {
 
   return 0;
 }
+
+
+
+// LIM - location information message
+// needs to be sent to each robot that joins
+// it contains leader's coordinates and the number of the idx of the bot
+// it also contains the spots left
+// - we do a round robin assignment, each bot collects it's spot and the others will follow
+// - we can also consider using the leader as the central brain which calculates the best route
+// - we add new bots in a certain order
