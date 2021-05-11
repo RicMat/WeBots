@@ -1,7 +1,7 @@
 // NUE
-// Red - X - Nord
-// Green - Y - Up
-// Blue - Z - East
+// Red - X - Nord y 
+// Green - Y - Up z
+// Blue - Z - East x
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
@@ -16,17 +16,17 @@
 
 #define SPEED 6
 #define TIME_STEP 64
-#define COMMUNICATION_CHANNEL 1
+#define COMMUNICATION_CHANNEL 2
 
 double x, y, z, bear, left_speed, right_speed, bearing, rotation;
 bool arrived;
 
 double get_bearing_in_degrees(WbDeviceTag compass) {
   const double *north = wb_compass_get_values(compass);
-  double rad = atan2(north[0], north[2]);
-  double bearing = (rad - 1.5708) / M_PI * 180.0;
+  double rad = atan2(north[2], north[0]);
+  double bearing = (rad) * 180.0 / M_PI;
   if (bearing < 0.0)
-    bearing = bearing + 360.0;
+    bearing = 360 +  bearing;
   return bearing;
 }
 
@@ -44,11 +44,11 @@ int main() {
   wb_motor_set_velocity(left_motor, 0.0);
   wb_motor_set_velocity(right_motor, 0.0);
   
-  emitter = wb_robot_get_device("emitter");
+  emitter = wb_robot_get_device("bt_e");
   wb_emitter_set_channel(emitter, COMMUNICATION_CHANNEL);
-  wb_emitter_set_range(emitter, 0.15);
+  wb_emitter_set_range(emitter, 1);
   
-  receiver = wb_robot_get_device("receiver");
+  receiver = wb_robot_get_device("bt_r");
   wb_receiver_enable(receiver, TIME_STEP);
   
   gps = wb_robot_get_device("gps");
@@ -59,9 +59,14 @@ int main() {
   
   arrived = false;
   
-  while (wb_robot_step(TIME_STEP) != -1) {
+  char message[34+1];
+  int my_ID = atoi(wb_robot_get_name() + 5);
+  // sprintf(message, "%03d", my_ID);
+  // wb_emitter_send(emitter, message, strlen(message) + 1);
   
-    const double *values = wb_gps_get_values(gps);
+  
+  wb_robot_step(TIME_STEP);
+    double *values = (double* )wb_gps_get_values(gps);
     x = values[0];
     y = values[1];
     z = values[2];
@@ -76,16 +81,20 @@ int main() {
       bear = 270 - (atan2(x, z) * 180 / M_PI);
       // bear = bear;
     }
-     
+    
+    sprintf(message, "%07.3f%07.3f", x, z);
+    printf("sending %f %f in message %s\n", x, z, message);
+    wb_emitter_send(emitter, message, strlen(message) + 1);
+    
     // const double *north = wb_compass_get_values(compass);
     
-    if (strncmp(wb_robot_get_name(), "epuck1", 6) == 0) {
-      printf("I'm %s and my coords are: %f x, %f y, and %f z\n", wb_robot_get_name(), x, y ,z);
+    // if (strncmp(wb_robot_get_name(), "epuck1", 6) == 0) {
+      // printf("I'm %s and my coords are: %f x, %f y, and %f z\n", wb_robot_get_name(), x, y ,z);
       // printf("I'm heading: %f %f\n", 1 - (atan(x / z) * 180.0 / (45 * M_PI)), (atan(x / z) * 180.0 / (45 * M_PI)));
       // printf("Bear: %f\n", 180 + bear);
-      printf("Bearing: %f\n", bearing);
-      printf("I'm heading: %f x, %f y, and %f z\n", north[0], north[1], north[2]);
-    }
+      // printf("Bearing: %f\n", bearing);
+      // printf("I'm heading: %f x, %f y, and %f z\n", north[0], north[1], north[2]);
+    // }
     /*
     if (x < 0.1 && z < 0.1) {
       wb_motor_set_velocity(left_motor, 0);
@@ -163,32 +172,59 @@ int main() {
       
     }
     */
-    
+  float my_x;
+  float X;
+  float my_z;
+  float Z;
+  float angle;
+  
+  while (wb_robot_step(TIME_STEP) != -1) {
     ////////////////////////////////////////////
     // Test basic communication between the robots
     //
     // Broadcast your ID as message to all the other robots
     
-    // const char *message = wb_robot_get_name();
-    // wb_emitter_send(emitter, message, strlen(message) + 1);
     
-    // if (wb_receiver_get_queue_length(receiver) > 0) {
-       // while (wb_receiver_get_queue_length(receiver) > 0) {
-        // /* read current packet's data */
-        // const char *buffer = wb_receiver_get_data(receiver);
-
-        // if (message_printed != 1) {
-          // /* print null-terminated message */
-          // const char *message = wb_robot_get_name();
-          // printf("Communicating: I'm robot \"%s\" and I received a message from robot \"%s\"\n", message, buffer);
-          
-        // }
-        // /* fetch next packet */
-        // wb_receiver_next_packet(receiver);
-      // } 
+    if (wb_receiver_get_queue_length(receiver) > 0) {
+        /* read current packet's data */
+        const char *buffer = wb_receiver_get_data(receiver);
+        char tmp[14+1];
+        X = atof(strncpy(tmp, buffer, 7));
+        Z = atof(strncpy(tmp, buffer+7, 7));
+        printf("received %7.3f %7.3f\n", X, Z);
+        /* fetch next packet */
+        wb_receiver_next_packet(receiver);
+      } 
       
-      // message_printed = 1;
-    // }
+    
+    if (my_ID == 2) {
+      printf("x = %f\n", x);
+      printf("z = %f\n", z);
+      my_x = x - X;
+      my_z = z - Z;
+      printf("my_x = %f\n", my_x);
+      printf("my_z = %f\n", my_z);
+      // rotate
+      angle = atan2(my_x, my_z);
+      printf("angle rad %f\n", angle);
+      
+      // We need to map to coord system when 0 degree is at 3 O'clock, 270 at 12 O'clock
+      if (my_x < 0) {
+        angle = 360 + (angle * 180 / M_PI);
+      }
+      else {
+        angle = angle * 180 / M_PI;
+      }
+      // angle = angle * 180 / M_PI;
+      printf("angle %f\n", angle);
+      
+      printf("compass %f\n", get_bearing_in_degrees(compass));
+    }
+    
+    values = (double* )wb_gps_get_values(gps);
+    x = values[0];
+    y = values[1];
+    z = values[2];
     
     ////////////////////////////////////////////
     // Test leader decision and set up process
@@ -212,15 +248,15 @@ int main() {
     // }
     
     // else {
-      left_speed = -0.2;
-      right_speed = 0.2;
+      // left_speed = -0.2;
+      // right_speed = 0.2;
     // }
     wb_motor_set_velocity(left_motor, left_speed);
     wb_motor_set_velocity(right_motor, right_speed);
   
   }
 
-  wb_robot_cleanup();
+  // wb_robot_cleanup();
 
   return 0;
 }

@@ -27,7 +27,7 @@ void construct_discovery_message(int my_ID, char team_player, char leader, int t
   else {
     strcat(message, "N");
   }
-  printf("%d sending DNB\n", my_ID);
+  // printf("%d sending DNB\n", my_ID);
   strcat(message, leader_ID_s); // leader_ID_s
 }
 
@@ -54,7 +54,7 @@ void construct_join_team_message(char* sender, char* receiver, char* TTL, char l
   
 }
 
-void construct_transfer_team_message(char* sender, char* receiver, char* TTL, char* ext_leader_ID) {
+void construct_transfer_team_message(char* sender, char* receiver, char* TTL, char* team_ID_s, char* ext_leader_ID) {
   /* similar to the JTM */
   /* we are here contacting our team members and requesting them to transfer to the new team*/
   
@@ -71,6 +71,7 @@ void construct_transfer_team_message(char* sender, char* receiver, char* TTL, ch
   strcat(message, sender);
   strcat(message, receiver);
   strcat(message, TTL);
+  strcat(message, team_ID_s);
   strcat(message, ext_leader_ID);
   
 }

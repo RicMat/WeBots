@@ -5,8 +5,8 @@ WorldInfo {
   lineScale 0.04
 }
 Viewpoint {
-  orientation 0.9313872633319591 -0.3262908409004956 -0.16140648328816137 5.3067332719823295
-  position 0.845759592293656 2.3957832421469707 1.7359672069742866
+  orientation 0.36652377004506725 0.8440046535180373 0.3915564720852516 4.478876884647162
+  position -1.3332189162424468 2.0670099573087475 0.04367997115782861
 }
 TexturedBackground {
 }
@@ -14,6 +14,7 @@ TexturedBackgroundLight {
 }
 RectangleArena {
   rotation 1 0 0 0
+  floorSize 6 6
   floorTileSize 0.25 0.25
   floorAppearance Parquetry {
     type "dark strip"
@@ -44,10 +45,9 @@ DEF OBSTACLE1 Solid {
   boundingObject USE BOX1
 }
 E-puck {
-  translation 0.242523 4.54082e-14 0.0252638
-  rotation -1.4131899998487522e-05 0.9999999998929743 -3.786909999594703e-06 -0.7854053071795866
+  translation 0 4.54082e-14 0
   name "epuck1"
-  controller "test_comms_position"
+  controller "test_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 1
@@ -70,7 +70,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 0 1 0
+              color 1 0 0
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -93,7 +93,6 @@ E-puck {
       ]
     }
     GPS {
-      translation 0 0.01 0
       scale 0.01 0.01 0.01
     }
     Compass {
@@ -122,10 +121,10 @@ E-puck {
   ]
 }
 E-puck {
-  translation -0.311417 -3.33067e-16 -0.237307
+  translation 0.5 -3.33067e-16 0.5
   rotation 0 1 0 0.2617989999999993
   name "epuck2"
-  controller "test_comms_position"
+  controller "test_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -148,7 +147,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 0 0 1
+              color 1 0 0
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -197,8 +196,8 @@ E-puck {
   ]
 }
 E-puck {
-  translation 6.04408 1.33227e-15 -3.44647
-  rotation 0 1 0 -1.8325953071795862
+  translation 0.104002 -3.33067e-16 -0.965347
+  rotation 0 1 0 0.2617989999999993
   name "epuck3"
   controller ""
   supervisor TRUE
@@ -206,123 +205,142 @@ E-puck {
     1800000, 1800000, 2
   ]
   turretSlot [
+    LED {
+      translation 0 0.001 -0.01
+      children [
+        Group {
+          children [
+            Shape {
+              appearance PBRAppearance {
+                baseColor 0.74902 0.74902 0.74902
+                roughness 1
+                metalness 0
+              }
+              geometry DEF LED_SHAPE Sphere {
+                radius 0.01
+              }
+            }
+            PointLight {
+              attenuation 0 0 1
+              color 0 0 0
+              intensity 0.5
+              location 0 0.03 0
+              on FALSE
+              castShadows TRUE
+            }
+          ]
+        }
+      ]
+      name "ledd"
+      color [
+        1 0 0
+        0 1 0
+        0 0 1
+        1 1 0
+        0 1 1
+        1 0 1
+        1 0.647059 0
+        0.627451 0.12549 0.941176
+        0.545098 0.411765 0.0784314
+      ]
+    }
     GPS {
     }
     Compass {
     }
     DEF EMITTER Emitter {
+      name "bt_e"
+      range 1
+      channel 2
+    }
+    DEF RECEIVER Receiver {
+      name "bt_r"
+      channel 2
+    }
+    DEF EMITTER Emitter {
       translation 0 0 -0.04
-      children [
-        DEF RANGE Transform {
-          children [
-            Shape {
-              appearance PBRAppearance {
-                baseColor 0.8 0.8 0.6
-                transparency 0.7
-                roughness 1
-                metalness 0
-              }
-              geometry Sphere {
-                radius 0.04
-                subdivision 2
-              }
-            }
-          ]
-        }
-      ]
       name "nfc_e"
-      range 0.05
-      aperture 3.14
+      range 0.06
       channel 1
     }
     DEF RECEIVER Receiver {
       translation 0 0 -0.04
-      children [
-        DEF RANGE Transform {
-          children [
-            Shape {
-              appearance PBRAppearance {
-                baseColor 0.8 0.6 0.8
-                transparency 0.7
-                roughness 1
-                metalness 0
-              }
-              geometry Sphere {
-                radius 0.04
-                subdivision 2
-              }
-            }
-          ]
-        }
-      ]
       name "nfc_r"
-      aperture 3.14
       channel 1
     }
   ]
 }
 E-puck {
-  translation 6.0598 7.69384e-14 -3.71474
-  rotation 0 1 0 -0.7854053071795866
+  translation -0.383767 1.11022e-16 -0.93885
+  rotation 0 1 0 0.2617989999999993
   name "epuck4"
   controller ""
   supervisor TRUE
   battery [
     1800000, 1800000, 2
   ]
-  window "generic_window"
   turretSlot [
+    LED {
+      translation 0 0.001 -0.01
+      children [
+        Group {
+          children [
+            Shape {
+              appearance PBRAppearance {
+                baseColor 0.74902 0.74902 0.74902
+                roughness 1
+                metalness 0
+              }
+              geometry DEF LED_SHAPE Sphere {
+                radius 0.01
+              }
+            }
+            PointLight {
+              attenuation 0 0 1
+              color 0 0 0
+              intensity 0.5
+              location 0 0.03 0
+              on FALSE
+              castShadows TRUE
+            }
+          ]
+        }
+      ]
+      name "ledd"
+      color [
+        1 0 0
+        0 1 0
+        0 0 1
+        1 1 0
+        0 1 1
+        1 0 1
+        1 0.647059 0
+        0.627451 0.12549 0.941176
+        0.545098 0.411765 0.0784314
+      ]
+    }
     GPS {
     }
     Compass {
     }
     DEF EMITTER Emitter {
+      name "bt_e"
+      range 1
+      channel 2
+    }
+    DEF RECEIVER Receiver {
+      name "bt_r"
+      channel 2
+    }
+    DEF EMITTER Emitter {
       translation 0 0 -0.04
-      children [
-        DEF RANGE Transform {
-          children [
-            Shape {
-              appearance PBRAppearance {
-                baseColor 0.8 0.8 0.6
-                transparency 0.7
-                roughness 1
-                metalness 0
-              }
-              geometry Sphere {
-                radius 0.04
-                subdivision 2
-              }
-            }
-          ]
-        }
-      ]
       name "nfc_e"
-      range 0.05
-      aperture 3.14
+      range 0.06
       channel 1
     }
     DEF RECEIVER Receiver {
       translation 0 0 -0.04
-      children [
-        DEF RANGE Transform {
-          children [
-            Shape {
-              appearance PBRAppearance {
-                baseColor 0.8 0.6 0.8
-                transparency 0.7
-                roughness 1
-                metalness 0
-              }
-              geometry Sphere {
-                radius 0.04
-                subdivision 2
-              }
-            }
-          ]
-        }
-      ]
       name "nfc_r"
-      aperture 3.14
       channel 1
     }
   ]

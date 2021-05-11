@@ -35,7 +35,7 @@
 #define WHITE 0
 #define BLACK 1
 #define TIME_STEP 64  // [ms]
-#define COMMUNICATION_CHANNEL_NFC 1
+#define COMMUNICATION_CHANNEL 1
 #define COMMUNICATION_CHANNEL_BT 2
 #define FLOOR_SIZE 3.0
 #define NB_LEDS 8
@@ -111,21 +111,16 @@ void ObstacleAvoidanceModule (void) {
 // MHM - Message Handling Module
 ////////////////////////////////////////////
 
-/* Basic comms */
 char code_in[4], ext_ID_s[4], my_ID_s[4], receiver_ID_s[4], leader_ID_s[4], ext_leader_ID_s[4];
 char ttl_s[4], extra[22+1], tmp_s[34+1], tmp_ss[4];
 char ext_team_player, ext_leader, last_queued, ext_team_size;
 bool leader = false, team_player = false, in_queue = false, duplicate_message = false;
 int leader_ID = 0, team_ID = 0, ext_leader_ID = 0, idx_comms = 0, idx_team = 0, ext_ID = 0;
-int receiver_ID = 0, ext_connection_ID = 0, tmp = 0, ttl = 0;
+int receiver_ID = 0, external_team_connection_ID = 0, tmp = 0, ttl = 0;
 int comms_queue[7], team_IDs[7];
+// comms queue is useless as we are using mesh flooding so it equals to seending broadcast with ttl = 0
 
-/* Relay */
-char ext_team_ID_s[4];
-bool relay = false;
-int ext_team_ID;
-
-/* Stored messages - Could use an Hash Table */
+// Stored messages - Could use an Hash Table
 char messages_lookback[4][SIZE][34+1];
 int messages_lookback_size[4] = { 0 };
 
@@ -145,10 +140,10 @@ int messages_lookback_size[4] = { 0 };
 
 
 void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
-  /* join other bot in a new team.
-  sends a series of LJT messages for each bot in the team 
-  if not the leader - update all the slaves of the change
-  if the leader - update the status to slave */
+  /* join other bot in a new team */
+  /* sends a series of LJT messages for each bot in the team */
+  /* if not the leader, update all the slaves of the change */
+  /* if the leader, update the status to slave */
   
   /* message structure: 
     
@@ -159,6 +154,7 @@ void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
     S - last_queued - Y if this is the last bot in queue
     
   */
+  // printf("... %d joining external team\n", my_ID);
   if (idx_team > 0) {
     construct_join_team_message(my_ID_s, ext_ID_s, "000", 'N');
   }
@@ -170,12 +166,16 @@ void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
   /* update my stats - we are for sure not the leader */
   leader = false;
   leader_ID = atoi(ext_leader_ID_s);
+  // printf("pree %d\n", leader_ID);
   team_IDs[idx_team] = leader_ID;
   idx_team += 1;
+  // printf("postt\n");
   
-  for (i=0; i<idx_team-1; i++) { // exclude the new leader 
+  for (i=0; i<idx_team-1; i++) {
+    // send message to the bot we are joining
+    // exclude the new leader
+    // sprintf(tmp_message, "LJT%03d%sN", team_IDs[i], ext_ID_s);
     
-    /* send message to the bot we are joining */
     snprintf(tmp_ss, 4, "%03d", team_IDs[i]);
     if(i == idx_team-1) {
       construct_join_team_message(tmp_ss, ext_ID_s, "000", 'Y');
@@ -185,14 +185,12 @@ void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
     }
     wb_emitter_send(emitter_bt, message, strlen(message) + 1);
     
-    /* send message to the bot we are transferring */
+    // send message to the bot we are transferring
     construct_transfer_team_message(my_ID_s, tmp_ss, "003", leader_ID_s, ext_leader_ID_s);
     wb_emitter_send(emitter_bt, message, strlen(message) + 1);
-    
     ////////
     // To Do: Update Location
     //////// 
-    
   }
 }
 
@@ -206,11 +204,7 @@ void inglobate_external_team(char* ext_ID_s, char last_queued) {
   if (leader) {
     /* TTL set to 0 as it should reach every other bot in the team in a single hop */
     construct_share_with_team_message("ITM", my_ID_s, "000", "000", ext_ID_s); 
-    
-    /////////
     // To Do: add location info
-    /////////
-    
   }
   else {
     /* TTL set to 3 as it should be enough to travel the whole team */
@@ -253,34 +247,40 @@ bool duplicate_message_check(char* code_in, int ext_ID, int receiver_ID, int ttl
     - ID not in my team_IDs list and it's not the external_team_connection_ID (we might want to reach a different team but not through this hop)
   
   */
-  /* message is from myself */
   if (ext_ID == my_ID) { 
+    /* message is from myself */
+    printf("myself\n");
     return true;
   }
-  
-  /* message not for me nor broadcast - no relay node */
-  if ((receiver_ID != my_ID && receiver_ID != 0) || (!relay))  {
+  if (receiver_ID != my_ID && receiver_ID != 0) { //&& atoi(ext_hop_ID) != external_team_connection_ID)
     /////////
     // To Do: Consider hop between teams
     /////////
+    printf("not for me\n");
     return true;
   }
   
   switch(hash_codes(code_in)) // we could make this shorter but this way we reduce the computational time up to 4 times
   {
     case 0: //"DNB"
+      printf("checking saved messages:\n");
       for (i=0; i<messages_lookback_size[0]; i++) {
         // first check the sender
+        printf("checking saved number %i: %s\n", i, messages_lookback[0][i]);
         memset(tmp_s, 0, 34+1);
         strncpy(tmp_s, messages_lookback[0][i]+3, 3);
+        printf("tmp_s: %s, atoi(tmp_s): %d, ext_ID: %d\n", tmp_s, atoi(tmp_s), ext_ID);
         if (atoi(tmp_s) == ext_ID) {
+          printf("atoi(tmp_s): %d, ext_ID: %d\n", atoi(tmp_s), ext_ID);
           // second compare the receiver
           memset(tmp_s, 0, 34+1);
           strncpy(tmp_s, messages_lookback[0][i]+6, 3);
+          printf("atoi(tmp_s): %d, receiver_ID: %d\n", atoi(tmp_s), receiver_ID);
           if (atoi(tmp_s) == receiver_ID) {
             // skip ttl but further check the remaining part of the message
             memset(tmp_s, 0, 34+1);
             strcpy(tmp_s, messages_lookback[0][i]+12);
+            printf("tmp_s: %s, extra: %s\n", tmp_s, extra);
             if (strcmp(tmp_s, extra) == 0) {
               return true;
             }
@@ -405,14 +405,19 @@ void handle_message(char* buffer) {
   
   
   strncpy(code_in, buffer, 3);
+  // printf("%d received %s\n", my_ID, code_in);
   strncpy(ext_ID_s, buffer+3, 3);
   ext_ID = atoi(ext_ID_s);
   strncpy(receiver_ID_s, buffer+6, 3);
   receiver_ID = atoi(receiver_ID_s);
   strncpy(ttl_s, buffer+9, 3);
   ttl = atoi(ttl_s);
-    
+  
+  printf("%d received message %s\n", my_ID, buffer);
+  
   duplicate_message = duplicate_message_check(code_in, ext_ID, receiver_ID, ttl, buffer+12, buffer);
+
+  printf("%d in_queue %d\n", my_ID, duplicate_message);
 
   if (duplicate_message) {
     return;
@@ -443,10 +448,12 @@ void handle_message(char* buffer) {
       ext_team_size = buffer[13];
       ext_leader = buffer[14];
       strncpy(ext_leader_ID_s, buffer+15, 3);
+      // printf("%d ext_leader_ID_s %s\n", my_ID, ext_leader_ID_s);
       ext_leader_ID = atoi(ext_leader_ID_s);
       
       tmp = ext_team_size - '0';
       
+      // printf("ext_team_size %s\n", &ext_team_size);
       if (tmp + team_size > 7) {
         // To Do:
         // reject_union_team();
@@ -457,6 +464,7 @@ void handle_message(char* buffer) {
       in_queue = false;
       for (i=0; i<idx_team; i++) {
         if(team_IDs[i] == ext_ID) {
+          printf("%d bot %d already in queue %d\n", my_ID, ext_ID, team_IDs[i]);
           in_queue = true; // discard this communication
         }
       }
@@ -467,6 +475,8 @@ void handle_message(char* buffer) {
       
       // printf("message %s\n", buffer);
       if (!in_queue) {
+        // printf("leader_ID %d ext_leader_ID %d\n", leader_ID, ext_leader_ID);
+        printf("%d bot not in queue %d\n", my_ID, ext_ID);
         /* New robot - process received information */
         // team_IDs[idx] = ext_ID;
         /* check who has the lowest ID to determine who is the leader */
@@ -492,6 +502,8 @@ void handle_message(char* buffer) {
     
     */ 
     case 1: //"LJT" - List of other team-members to Join my Team
+      // printf("received LJT\n");
+      // printf("message %s\n", buffer);
       last_queued = buffer[12-1];
       inglobate_external_team(ext_ID_s, last_queued);
       break;
@@ -503,6 +515,7 @@ void handle_message(char* buffer) {
     
     */
     case 2: //"TTT" - Transfer To the new Team
+      // printf("received TTT\n");
       strncpy(tmp_ss, buffer+12, 3);
       if (strcmp(tmp_ss, leader_ID_s) != 0) { // not for my team
       ////////
@@ -533,6 +546,7 @@ void handle_message(char* buffer) {
     */
     case 3: //"ITM" - Inform Team Member
       // in future we will work with codes - ITM should be a general message
+      // printf("received ITM\n");
       strncpy(tmp_ss, buffer+12, 3);
       if (atoi(tmp_ss) != my_ID) {
         team_IDs[idx_team] = atoi(tmp_ss);
@@ -652,12 +666,12 @@ int main() {
   
   /* NFC Comms */
   
-  emitter_nfc = wb_robot_get_device("nfc_e");
-  wb_emitter_set_channel(emitter_nfc, COMMUNICATION_CHANNEL_NFC);
-  wb_emitter_set_range(emitter_nfc,  0.06);
+  // emitter_nfc = wb_robot_get_device("nfc_e");
+  // wb_emitter_set_channel(emitter_nfc, COMMUNICATION_CHANNEL_NFC);
+  // wb_emitter_set_range(emitter_nfc,  0.06);
   
-  receiver_nfc = wb_robot_get_device("nfc_r");
-  wb_receiver_enable(receiver_nfc, TIME_STEP);
+  // receiver_nfc = wb_robot_get_device("nfc_r");
+  // wb_receiver_enable(receiver_nfc, TIME_STEP);
   
   /* LEDs */
   for (i = 0; i < NB_LEDS; i++) {
@@ -702,9 +716,9 @@ int main() {
   /* Main Loop */    
   while(wb_robot_step(TIME_STEP) != -1 && wb_robot_get_time() < (10800 * 5)) {  // Main loop - 5 times for max 3 hours each
     
-    // printf("---\n");
-    // printf("%d new step\n", my_ID);
-    // printf("---\n");
+    printf("---\n");
+    printf("%d new step\n", my_ID);
+    printf("---\n");
     
     /* Reset Simulation */
     if (wb_robot_get_time() >= (10800 * run)){
@@ -735,23 +749,49 @@ int main() {
       RandomizeMovementModule();
     }
     
+    
+    
+    
+    
+    
+    
+    
+    // Only if leaderrrrrrrrrrr //
+    
+    
+    
+    
+    
+    
+    
+    
+    
     /* Communication */
     /* Communication is execute one step in advance as we need time to */
     /* process the data which will be delivered to the other robot */
     /* one step in the future */
     
     /* Initial message exchange - to be repeated every step to engage new bots */ 
-    if (!(leader && idx_team > 3) || (!relay)) {
+    if (1) {
+      // for (i=0; i<NB_LEDS; i++)
+        // wb_led_set(leds[1], 1);
       construct_discovery_message(my_ID, team_player, leader, idx_team, leader_ID_s); // saves the desired string in variable message
       wb_emitter_send(emitter_bt, message, strlen(message) + 1);
     }
-    
     if (team_player) {
       if (leader)
         wb_led_set(leddl, 2);
       else
         wb_led_set(leddl, 3);
     }
+    
+    // if (! have_leader) { 
+      // /* DNB Discover New Bot - ID - No Part of Team - No Leader */
+      // snprintf(message, 7, "DNB%dNN", my_ID); 
+    // }
+    // else {
+    
+    // }
     
     /* Check for new messages and process them */
     while (wb_receiver_get_queue_length(receiver_bt) > 0) {
@@ -790,15 +830,17 @@ int main() {
     // }  
     
     /* Set wheel speeds */
-    // printf("%d idx_team %d\n", my_ID, idx_team);
-    // for (i=0; i<idx_team; i++)
-      // printf("%d id %d\n", i, team_IDs[i]);
+    printf("%d idx_team %d\n", my_ID, idx_team);
+    for (i=0; i<idx_team; i++)
+      printf("%d id %d\n", i, team_IDs[i]);
     
     if (leader) {
+      // printf("%d robot in %d leader %d\n", my_ID, team_IDs[0], leader);
       wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]); // speed[LEFT]);
       wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]); // speed[RIGHT]);
     }
     else {
+      // printf("%d robot in %d\n", my_ID, team_IDs[0]);
       wb_motor_set_velocity(left_motor, 0);
       wb_motor_set_velocity(right_motor, 0);
     }
