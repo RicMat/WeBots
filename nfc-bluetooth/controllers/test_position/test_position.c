@@ -21,13 +21,20 @@
 double x, y, z, bear, left_speed, right_speed, bearing, rotation;
 bool arrived;
 
-double get_bearing_in_degrees(WbDeviceTag compass) {
+double get_bearing_in_degrees(WbDeviceTag compass) { // no need 90 degree offset cause we are using two different reference planes
   const double *north = wb_compass_get_values(compass);
   double rad = atan2(north[2], north[0]);
   double bearing = (rad) * 180.0 / M_PI;
   if (bearing < 0.0)
     bearing = 360 +  bearing;
   return bearing;
+}
+
+int sign(float number) {
+  if (number > 0)
+    return 1;
+  else
+    return -1;
 }
 
 int main() {
@@ -177,6 +184,8 @@ int main() {
   float my_z;
   float Z;
   float angle;
+  float angle_compass;
+  float diff_angle;
   
   while (wb_robot_step(TIME_STEP) != -1) {
     ////////////////////////////////////////////
@@ -191,22 +200,22 @@ int main() {
         char tmp[14+1];
         X = atof(strncpy(tmp, buffer, 7));
         Z = atof(strncpy(tmp, buffer+7, 7));
-        printf("received %7.3f %7.3f\n", X, Z);
+        // printf("received %7.3f %7.3f\n", X, Z);
         /* fetch next packet */
         wb_receiver_next_packet(receiver);
       } 
       
     
     if (my_ID == 2) {
-      printf("x = %f\n", x);
-      printf("z = %f\n", z);
+      // printf("x = %f\n", x);
+      // printf("z = %f\n", z);
       my_x = x - X;
       my_z = z - Z;
-      printf("my_x = %f\n", my_x);
-      printf("my_z = %f\n", my_z);
+      // printf("my_x = %f\n", my_x);
+      // printf("my_z = %f\n", my_z);
       // rotate
       angle = atan2(my_x, my_z);
-      printf("angle rad %f\n", angle);
+      // printf("angle rad %f\n", angle);
       
       // We need to map to coord system when 0 degree is at 3 O'clock, 270 at 12 O'clock
       if (my_x < 0) {
@@ -216,9 +225,23 @@ int main() {
         angle = angle * 180 / M_PI;
       }
       // angle = angle * 180 / M_PI;
-      printf("angle %f\n", angle);
-      
-      printf("compass %f\n", get_bearing_in_degrees(compass));
+      // printf("angle %f\n", angle);
+      angle_compass = get_bearing_in_degrees(compass);
+      // printf("compass %f\n", angle_compass);
+    
+      diff_angle = angle - angle_compass;
+      // printf("diff %f\n", diff_angle);
+      if (fabs(diff_angle) > 2) {
+        printf("rotating\n");
+          left_speed = -0.5 * sign(my_x);
+          right_speed = 0.5 * sign(my_x);
+        
+      }
+      else {
+        left_speed = 1;
+        right_speed = 1;
+      }
+    
     }
     
     values = (double* )wb_gps_get_values(gps);
