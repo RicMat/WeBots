@@ -670,28 +670,28 @@ void handle_position_f(float x_ref, float y_ref, int my_team_ID) {
   switch(my_team_ID)
   {
     case 1:
-      x_goal = x_ref - 10;
-      y_goal = y_ref;
+      x_goal = -10; //x_ref - 10;
+      y_goal = 0; //y_ref;
       break;
     case 2:
-      x_goal = x_ref + 10;
-      y_goal = y_ref;
+      x_goal = 10; //x_ref + 10;
+      y_goal = 0; //y_ref;
       break;
     case 3:
-      x_goal = x_ref - 5;
-      y_goal = y_ref + 8.66;
+      x_goal = -5; //x_ref - 5;
+      y_goal = 8.66; //y_ref + 8.66;
       break;
     case 4:
-      x_goal = x_ref + 5;
-      y_goal = y_ref + 8.66;
+      x_goal = 5; //x_ref + 5;
+      y_goal = 8.66; //y_ref + 8.66;
       break;
     case 5:
-      x_goal = x_ref - 5;
-      y_goal = y_ref - 8.66;
+      x_goal = -5; //x_ref - 5;
+      y_goal = -8.66; //y_ref - 8.66;
       break;
     case 6:
-      x_goal = x_ref + 5;
-      y_goal = y_ref - 8.66;
+      x_goal = 5; //x_ref + 5;
+      y_goal = -8.66; //y_ref - 8.66;
       break;
     default:
       break;
@@ -873,7 +873,7 @@ int main() {
   /* BT Comms */
   emitter_bt = wb_robot_get_device("bt_e");
   wb_emitter_set_channel(emitter_bt, COMMUNICATION_CHANNEL_BT);
-  wb_emitter_set_range(emitter_bt, 10.0);
+  wb_emitter_set_range(emitter_bt, 11.0);
   
   receiver_bt = wb_robot_get_device("bt_r");
   wb_receiver_enable(receiver_bt, TIME_STEP);
@@ -1009,14 +1009,21 @@ int main() {
       my_x = (x - x_ref) - x_goal;
       my_y = (y - y_ref) - y_goal;
       
-      // printf("my x: %f\n", x);
-      // printf("my y: %f\n", y);
-      // printf("my x wrt ref: %f\n", x-x_ref);
-      // printf("my y wrt ref: %f\n", y-y_ref);
-      // printf("my goal x: %f\n", x_goal);
-      // printf("my goal y: %f\n", y_goal);
-      // printf("my goal x wrt ref: %f\n", my_x);
-      // printf("my goal y wrt ref: %f\n", my_y);
+      if ((int)round(wb_robot_get_time()) % 8 == 0) {
+        printf("my team ID: %i\n", my_team_ID);
+        printf("my ref x: %f\n", x_ref);
+        printf("my ref y: %f\n", y_ref);
+        printf("my x: %f\n", x);
+        printf("my y: %f\n", y);
+        printf("my x wrt ref: %f\n", x-x_ref);
+        printf("my y wrt ref: %f\n", y-y_ref);
+        printf("my goal x: %f\n", x_goal+x_ref);
+        printf("my goal y: %f\n", y_goal+y_ref);
+        printf("my goal x wrt ref: %f\n", x_goal);
+        printf("my goal y wrt ref: %f\n", y_goal);
+        printf("x dist to my goal: %f\n", my_x);
+        printf("y dist to my goal: %f\n", my_y);
+      }
       
       angle = atan2(my_y, my_x);
       
