@@ -44,7 +44,7 @@
 #define TIME_STEP 64  // [ms]
 #define COMMUNICATION_CHANNEL_NFC 1
 #define COMMUNICATION_CHANNEL_BT 2
-#define FLOOR_SIZE 12.0
+#define FLOOR_SIZE 2.0
 #define NB_LEDS 8
 
 // 8 IR proximity sensors
@@ -194,6 +194,7 @@ void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
     S - last_queued - Y if this is the last bot in queue
     
   */
+  printf("%d joining external team %s\n", my_ID, ext_leader_ID_s);
   if (idx_team > 0) {
     construct_join_team_message(my_ID_s, ext_ID_s, "000", 'N');
   }
@@ -202,12 +203,7 @@ void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
   }
   wb_emitter_send(emitter_bt, message, strlen(message) + 1);
   
-  /* update my stats - we are for sure not the leader */
-  leader = false;
-  leader_ID = atoi(ext_leader_ID_s);
-  team_IDs[idx_team] = leader_ID;
-  idx_team += 1;
-  for (i=0; i<idx_team-1; i++) { // exclude the new leader 
+  for (i=0; i<idx_team; i++) { // exclude the new leader 
     
     /* send message to the bot we are joining */
     snprintf(tmp_ss, 4, "%03d", team_IDs[i]);
@@ -225,9 +221,19 @@ void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
     
     ////////
     // To Do: Update Location
+    // here we ask for the new location for each robot and send it to them so they can start move towards it
+    // we should continuously check whether we r in range of the leader so we can save time
     //////// 
     
   }
+  
+  /* update my stats - we are for sure not the leader */
+  leader = false;
+  strcpy(leader_ID_s, ext_leader_ID_s);
+  leader_ID = atoi(ext_leader_ID_s);
+  team_IDs[idx_team] = leader_ID;
+  idx_team += 1;
+  
 }
 
 void inglobate_external_team(char* ext_ID_s, char last_queued) {
@@ -311,14 +317,14 @@ bool duplicate_message_check(char* code_in, int ext_ID, int receiver_ID, int ttl
           // second compare the receiver
           memset(tmp_s, 0, 34+1);
           strncpy(tmp_s, messages_lookback[0][i]+6, 3);
-          if (atoi(tmp_s) == receiver_ID) {
+          // if (atoi(tmp_s) == receiver_ID) {
             // skip ttl but further check the remaining part of the message
-            memset(tmp_s, 0, 34+1);
-            strcpy(tmp_s, messages_lookback[0][i]+12);
-            if (strcmp(tmp_s, extra) == 0) {
+            // memset(tmp_s, 0, 34+1);
+            // strcpy(tmp_s, messages_lookback[0][i]+12);
+            // if (strcmp(tmp_s, extra) == 0) {
               return true;
-            }
-          }
+            // }
+          // }
         }
       }
       /* if we have reached this point means it's not a duplicate, save it */
@@ -440,7 +446,7 @@ void handle_message(char* buffer) {
   
   
   
-  
+  printf("%d received %s\n", my_ID, buffer);
   
   
   
@@ -472,6 +478,7 @@ void handle_message(char* buffer) {
   duplicate_message = duplicate_message_check(code_in, ext_ID, receiver_ID, ttl, buffer+12, buffer);
 
   if (duplicate_message) {
+    printf("duplicate\n");
     return;
   }
   
@@ -482,6 +489,8 @@ void handle_message(char* buffer) {
     strcat(message, buffer+12);
     wb_emitter_send(emitter_bt, message, strlen(message) + 1);
   }
+  
+  printf("code: %d\n",hash_codes(code_in)); 
   
   switch(hash_codes(code_in))
   {
@@ -503,6 +512,7 @@ void handle_message(char* buffer) {
       ext_leader_ID = atoi(ext_leader_ID_s);
       
       tmp = ext_team_size - '0';
+      printf("processing DNB\n");
       
       if (tmp + team_size > 7) {
         // To Do:
@@ -526,14 +536,14 @@ void handle_message(char* buffer) {
       // x_ref =
       // y_ref =
       
-      new_bot = true;
+      new_bot = true; // for debug
       
       // printf("message %s\n", buffer);
       if (!in_queue) {
         /* New robot - process received information */
         // team_IDs[idx] = ext_ID;
         /* check who has the lowest ID to determine who is the leader */
-        if (leader_ID < ext_ID) {
+        if (leader_ID < ext_leader_ID) {
           /* external bot will join my team */
           /* to be done at message level - LJT message */
           break; // To Do: Maybe send location for supplementary bots
@@ -572,6 +582,7 @@ void handle_message(char* buffer) {
       ////////
       // To Do: change it so that the team_ID (leader_ID) is in every message
       ////////
+        printf("wtf\n");
         break;
       }
       strncpy(leader_ID_s, buffer+15, 3);
@@ -619,8 +630,8 @@ void handle_message(char* buffer) {
       y_ref = atof(y_ref_s);
       strncpy(my_team_ID_s, buffer+26, 1);
       my_team_ID = atoi(my_team_ID_s);
-      printf("received %s\n", buffer);
-      printf("which contains x_ref %s and y_ref %s\n", x_ref_s, y_ref_s);
+      // printf("received %s\n", buffer);
+      // printf("which contains x_ref %s and y_ref %s\n", x_ref_s, y_ref_s);
       if (leader) {
         /* shouldn't be a possibility */
         break;
@@ -708,8 +719,8 @@ void handle_position_f(float x_ref, float y_ref, int my_team_ID) {
 //////////////
 
 void recover_ref_pos(float x, float y, int my_team_ID) {
-  printf("recovering ref\n");
-  printf("x %f and y %f and team_ID %d\n", x, y, my_team_ID);
+  // printf("recovering ref\n");
+  // printf("x %f and y %f and team_ID %d\n", x, y, my_team_ID);
   if (leader) {
     x_ref = x;
     y_ref = y;
@@ -873,7 +884,7 @@ int main() {
   /* BT Comms */
   emitter_bt = wb_robot_get_device("bt_e");
   wb_emitter_set_channel(emitter_bt, COMMUNICATION_CHANNEL_BT);
-  wb_emitter_set_range(emitter_bt, 11.0);
+  wb_emitter_set_range(emitter_bt, 1.0);
   
   receiver_bt = wb_robot_get_device("bt_r");
   wb_receiver_enable(receiver_bt, TIME_STEP);
@@ -979,6 +990,13 @@ int main() {
     if (!(leader && idx_team > 3) || (!relay)) {
       // printf("bbbbb\n");
       construct_discovery_message(my_ID, team_player, leader, idx_team, leader_ID_s); // saves the desired string in variable message
+      
+      
+      ////////
+      // To Do: check leader_ID seems scuffed
+      // received DNB004000000Y2N004 004 shouldn't be the leader ID
+      ////////
+      
       wb_emitter_send(emitter_bt, message, strlen(message) + 1);
     }
     
@@ -1009,21 +1027,21 @@ int main() {
       my_x = (x - x_ref) - x_goal;
       my_y = (y - y_ref) - y_goal;
       
-      if ((int)round(wb_robot_get_time()) % 8 == 0) {
-        printf("my team ID: %i\n", my_team_ID);
-        printf("my ref x: %f\n", x_ref);
-        printf("my ref y: %f\n", y_ref);
-        printf("my x: %f\n", x);
-        printf("my y: %f\n", y);
-        printf("my x wrt ref: %f\n", x-x_ref);
-        printf("my y wrt ref: %f\n", y-y_ref);
-        printf("my goal x: %f\n", x_goal+x_ref);
-        printf("my goal y: %f\n", y_goal+y_ref);
-        printf("my goal x wrt ref: %f\n", x_goal);
-        printf("my goal y wrt ref: %f\n", y_goal);
-        printf("x dist to my goal: %f\n", my_x);
-        printf("y dist to my goal: %f\n", my_y);
-      }
+      // if ((int)round(wb_robot_get_time()) % 8 == 0) {
+        // printf("my team ID: %i\n", my_team_ID);
+        // printf("my ref x: %f\n", x_ref);
+        // printf("my ref y: %f\n", y_ref);
+        // printf("my x: %f\n", x);
+        // printf("my y: %f\n", y);
+        // printf("my x wrt ref: %f\n", x-x_ref);
+        // printf("my y wrt ref: %f\n", y-y_ref);
+        // printf("my goal x: %f\n", x_goal+x_ref);
+        // printf("my goal y: %f\n", y_goal+y_ref);
+        // printf("my goal x wrt ref: %f\n", x_goal);
+        // printf("my goal y wrt ref: %f\n", y_goal);
+        // printf("x dist to my goal: %f\n", my_x);
+        // printf("y dist to my goal: %f\n", my_y);
+      // }
       
       angle = atan2(my_y, my_x);
       

@@ -6,7 +6,7 @@ WorldInfo {
 }
 Viewpoint {
   orientation 0.5239012442319733 0.673225071495067 0.5218194030530602 4.3303430966019265
-  position -7.398320910017372 34.20186098010955 0.7566213589673714
+  position -0.0473000710617586 7.524078089754622 0.036464616151010265
 }
 TexturedBackground {
 }
@@ -14,7 +14,7 @@ TexturedBackgroundLight {
 }
 RectangleArena {
   rotation 1 0 0 0
-  floorSize 25 25
+  floorSize 55 55
   floorTileSize 0.25 0.25
   floorAppearance Parquetry {
     type "dark strip"
@@ -70,7 +70,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 1 0
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -100,7 +100,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 1
+      range 11
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -147,7 +147,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -175,7 +175,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 1
+      range 11
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -199,7 +199,7 @@ E-puck {
   translation 6.22327 5.55111e-16 -2.42151
   rotation 0 1 0 0.2617989999999993
   name "epuck3"
-  controller ""
+  controller "test_comms_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -274,7 +274,7 @@ E-puck {
   translation 6.23313 1.11027e-16 -2.10622
   rotation 0 1 0 0.2617989999999993
   name "epuck4"
-  controller ""
+  controller "test_comms_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 2

@@ -50,6 +50,7 @@ void construct_join_team_message(char* sender, char* receiver, char* TTL, char l
   strcat(message, receiver);
   strcat(message, TTL);
   strcat(message, &last_queued);
+  
   // printf("sending %s  %c\n", message, last_queued);
   
 }
