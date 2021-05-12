@@ -9,4 +9,6 @@ build/release/test_comms_position.o: test_comms_position.c \
   /Applications/Webots.app/include/controller/c/webots/robot.h \
   /Applications/Webots.app/include/controller/c/webots/nodes.h \
   /Applications/Webots.app/include/controller/c/webots/supervisor.h \
-  OAM.h MHM.h
+  /Applications/Webots.app/include/controller/c/webots/gps.h \
+  /Applications/Webots.app/include/controller/c/webots/compass.h OAM.h \
+  MHM.h

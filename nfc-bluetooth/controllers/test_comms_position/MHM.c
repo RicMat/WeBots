@@ -85,3 +85,19 @@ void construct_share_with_team_message(char* code_in, char* sender, char* receiv
   strcat(message, extra);
   
 }
+
+void construct_inform_location_message(char* sender, char* receiver, float x_ref, float y_ref, int team_idx) {
+  /* inform the bot of the reference location as well as its team_ID */
+  
+  strcpy(message, "ILM");
+  strcat(message, sender);
+  strcat(message, receiver);
+  strcat(message, "000");
+  sprintf(tmp_s, "%07.3f", x_ref);
+  strcat(message, tmp_s);
+  sprintf(tmp_s, "%07.3f", y_ref);
+  strcat(message, tmp_s);
+  sprintf(tmp_s, "%1d", team_idx);
+  strcat(message, tmp_s);
+   
+}

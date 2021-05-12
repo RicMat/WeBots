@@ -77,7 +77,6 @@ int main() {
     x = values[0];
     y = values[1];
     z = values[2];
-    const double *north = wb_compass_get_values(compass);
     
     bearing = get_bearing_in_degrees(compass);
     // bear = (atan2(x, z) / M_PI) * 180.0;
@@ -205,6 +204,11 @@ int main() {
         wb_receiver_next_packet(receiver);
       } 
       
+        
+    values = (double* )wb_gps_get_values(gps);
+    x = values[0];
+    y = values[1];
+    z = values[2];
     
     if (my_ID == 2) {
       // printf("x = %f\n", x);
@@ -232,7 +236,6 @@ int main() {
       diff_angle = angle - angle_compass;
       // printf("diff %f\n", diff_angle);
       if (fabs(diff_angle) > 2) {
-        printf("rotating\n");
           left_speed = -0.5 * sign(my_x);
           right_speed = 0.5 * sign(my_x);
         
@@ -243,11 +246,7 @@ int main() {
       }
     
     }
-    
-    values = (double* )wb_gps_get_values(gps);
-    x = values[0];
-    y = values[1];
-    z = values[2];
+
     
     ////////////////////////////////////////////
     // Test leader decision and set up process

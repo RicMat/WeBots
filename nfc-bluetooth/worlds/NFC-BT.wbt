@@ -5,8 +5,8 @@ WorldInfo {
   lineScale 0.04
 }
 Viewpoint {
-  orientation 0.36652377004506725 0.8440046535180373 0.3915564720852516 4.478876884647162
-  position -2.1354636238803835 3.0175931473216693 -0.009359992887370355
+  orientation 0.5239012442319733 0.673225071495067 0.5218194030530602 4.3303430966019265
+  position -7.398320910017372 34.20186098010955 0.7566213589673714
 }
 TexturedBackground {
 }
@@ -14,7 +14,7 @@ TexturedBackgroundLight {
 }
 RectangleArena {
   rotation 1 0 0 0
-  floorSize 6 6
+  floorSize 25 25
   floorTileSize 0.25 0.25
   floorAppearance Parquetry {
     type "dark strip"
@@ -47,7 +47,7 @@ DEF OBSTACLE1 Solid {
 E-puck {
   translation 0 4.54082e-14 0
   name "epuck1"
-  controller "test_position"
+  controller "test_comms_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 1
@@ -124,7 +124,7 @@ E-puck {
   translation 0.5 -3.33067e-16 0.5
   rotation 0 1 0 0.2617989999999993
   name "epuck2"
-  controller "test_position"
+  controller "test_comms_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -196,7 +196,7 @@ E-puck {
   ]
 }
 E-puck {
-  translation 0.104002 -3.33067e-16 -0.965347
+  translation 6.22327 5.55111e-16 -2.42151
   rotation 0 1 0 0.2617989999999993
   name "epuck3"
   controller ""
@@ -222,7 +222,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 0 0 0
+              color 1 0 0
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -271,7 +271,7 @@ E-puck {
   ]
 }
 E-puck {
-  translation -0.383767 1.11022e-16 -0.93885
+  translation 6.23313 1.11027e-16 -2.10622
   rotation 0 1 0 0.2617989999999993
   name "epuck4"
   controller ""
@@ -297,7 +297,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 0 0 0
+              color 1 0 0
               intensity 0.5
               location 0 0.03 0
               on FALSE

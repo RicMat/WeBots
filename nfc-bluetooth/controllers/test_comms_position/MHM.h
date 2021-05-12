@@ -9,5 +9,6 @@ void construct_discovery_message(int my_ID, char team_player, char leader, int t
 void construct_join_team_message(char* sender, char* receiver, char* TTL, char last_queued);
 void construct_transfer_team_message(char* sender, char* receiver, char* TTL, char* leader_ID_s, char* ext_leader_ID);
 void construct_share_with_team_message(char* code_in, char* sender, char* receiver, char* TTL, char* extra);
+void construct_inform_location_message(char* sender, char* receiver, float x_ref, float y_ref, int team_idx);
 
 #endif 

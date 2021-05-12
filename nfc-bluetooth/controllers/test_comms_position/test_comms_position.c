@@ -4,6 +4,11 @@
 //   in this case we'd have two robots trying to move team_3 towards team_1 and team_2
 // - 
 
+// NUE
+// Red - X - Nord y 
+// Green - Y - Up z
+// Blue - Z - East x
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -18,6 +23,8 @@
 #include <webots/robot.h>
 #include <webots/supervisor.h>
 #include <webots/led.h>
+#include <webots/gps.h>
+#include <webots/compass.h>
 #include <string.h>
 
 // Custom libraries
@@ -37,7 +44,7 @@
 #define TIME_STEP 64  // [ms]
 #define COMMUNICATION_CHANNEL_NFC 1
 #define COMMUNICATION_CHANNEL_BT 2
-#define FLOOR_SIZE 3.0
+#define FLOOR_SIZE 12.0
 #define NB_LEDS 8
 
 // 8 IR proximity sensors
@@ -92,6 +99,13 @@ float turn;
 //
 //------------------------------------------------------------------------------
 
+
+
+void inform_new_location(char* ext_ID_s);
+void handle_position_f(float x_ref, float y_ref, int my_team_ID);
+
+
+
 ////////////////////////////////////////////
 // OAM - Obstacle Avoidance Module
 ////////////////////////////////////////////
@@ -129,10 +143,11 @@ bool relay = false;
 int ext_team_ID;
 
 /* Location */
-char x_ref_s[7+1], y_ref_s[7+1], my_team_ID[2];
-float x_ref_pos, y_ref_pos;
+char x_ref_s[7+1], y_ref_s[7+1], my_x_s[7+1], my_y_s[7+1], my_team_ID_s[2];
+float x_ref, y_ref, my_x, my_y, x_goal, y_goal, bearing, angle, angle_compass, diff_angle;
 int my_team_ID = 0;
-bool location_change = false, new_bot = false;
+bool location_change = false, new_bot = false, waiting_new_bot = false;
+
 
 /* Stored messages - Could use an Hash Table */
 char messages_lookback[5][SIZE][34+1];
@@ -192,7 +207,6 @@ void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
   leader_ID = atoi(ext_leader_ID_s);
   team_IDs[idx_team] = leader_ID;
   idx_team += 1;
-  
   for (i=0; i<idx_team-1; i++) { // exclude the new leader 
     
     /* send message to the bot we are joining */
@@ -237,10 +251,9 @@ void inglobate_external_team(char* ext_ID_s, char last_queued) {
   team_IDs[idx_team] = atoi(ext_ID_s);
   idx_team += 1;
   
-  /* Update my location */
-  ////////
-  // To Do: update my location after the new bot has joined
-  ////////
+  /* Update location */
+  inform_new_location(ext_ID_s);
+  waiting_new_bot = true;
   
 }
 
@@ -276,7 +289,7 @@ bool duplicate_message_check(char* code_in, int ext_ID, int receiver_ID, int ttl
   }
   
   /* message not for me nor broadcast - no relay node */
-  if ((receiver_ID != my_ID && receiver_ID != 0) || (!relay))  {
+  if ((receiver_ID != my_ID && receiver_ID != 0) || (receiver_ID != my_ID && receiver_ID != 0 && !relay))  {
     /////////
     // To Do: Consider hop between teams
     /////////
@@ -381,7 +394,7 @@ bool duplicate_message_check(char* code_in, int ext_ID, int receiver_ID, int ttl
       strcpy(messages_lookback[3][messages_lookback_size[3]], buffer);
       messages_lookback_size[3] += 1;
       return false;
-    case 4:
+    case 4: // "ILM"
       for (i=0; i<messages_lookback_size[4]; i++) {
         // first check the sender
         memset(tmp_s, 0, 34+1);
@@ -444,7 +457,7 @@ void handle_message(char* buffer) {
   
   
   
-  
+
   
   
   
@@ -510,8 +523,8 @@ void handle_message(char* buffer) {
       }
       
       /* either case we assume initial reference position as our current position - assume we stop when meet another bot */
-      x_ref_pos =
-      y_ref_pos =
+      // x_ref =
+      // y_ref =
       
       new_bot = true;
       
@@ -544,7 +557,7 @@ void handle_message(char* buffer) {
     case 1: //"LJT" - List of other team-members to Join my Team
       last_queued = buffer[12-1];
       inglobate_external_team(ext_ID_s, last_queued);
-      inform_new_location(ext_ID_s);
+      // inform_new_location(ext_ID_s);
       break;
     /*
     
@@ -599,19 +612,20 @@ void handle_message(char* buffer) {
     S       - my_team_ID_s - ID given to me by the leader; based on this value I'll move to a certain location
     
     */
-    case 4:
+    case 4: // "ILM" - Inform of new Location Message
       strncpy(x_ref_s, buffer+12, 7);
       x_ref = atof(x_ref_s);
       strncpy(y_ref_s, buffer+19, 7);
       y_ref = atof(y_ref_s);
       strncpy(my_team_ID_s, buffer+26, 1);
       my_team_ID = atoi(my_team_ID_s);
-            
+      printf("received %s\n", buffer);
+      printf("which contains x_ref %s and y_ref %s\n", x_ref_s, y_ref_s);
       if (leader) {
         /* shouldn't be a possibility */
         break;
       }
-      else (
+      else {
         handle_position_f(x_ref, y_ref, my_team_ID);
       }
       break;
@@ -633,44 +647,108 @@ void handle_message(char* buffer) {
 
 
 
+double get_bearing_in_degrees(WbDeviceTag compass) { // no need 90 degree offset cause we are using two different reference planes
+  const double *north = wb_compass_get_values(compass);
+  double rad = atan2(north[2], north[0]);
+  double bearing = (rad) * 180.0 / M_PI;
+  
+  if (bearing < 0.0)
+    bearing = 360 +  bearing;
+  
+  return bearing;
+}
 
-
+int sign(float number) {
+  if (number > 0)
+    return 1;
+  else
+    return -1;
+}
 
 void handle_position_f(float x_ref, float y_ref, int my_team_ID) {
   
   switch(my_team_ID)
   {
     case 1:
-      x_ref -= 10;
+      x_goal = x_ref - 10;
+      y_goal = y_ref;
       break;
     case 2:
-      x_ref += 10;
+      x_goal = x_ref + 10;
+      y_goal = y_ref;
       break;
     case 3:
-      x_ref -= 5;
-      y_ref += 8.66;
+      x_goal = x_ref - 5;
+      y_goal = y_ref + 8.66;
       break;
     case 4:
-      x_ref += 5;
-      y_ref += 8.66;
+      x_goal = x_ref + 5;
+      y_goal = y_ref + 8.66;
       break;
     case 5:
-      x_ref -= 5;
-      y_ref -= 8.66;
+      x_goal = x_ref - 5;
+      y_goal = y_ref - 8.66;
       break;
     case 6:
-      x_ref += 5;
-      y_ref -= 8.66;
+      x_goal = x_ref + 5;
+      y_goal = y_ref - 8.66;
       break;
     default:
       break;
   }
   
-  location_changed = true;
+  location_change = true;
   
 }
 
-void inform_new_location(ext_ID_s) {
+//////////////
+//
+// To Do: update team_ID which is always 0 now
+//
+//////////////
+
+void recover_ref_pos(float x, float y, int my_team_ID) {
+  printf("recovering ref\n");
+  printf("x %f and y %f and team_ID %d\n", x, y, my_team_ID);
+  if (leader) {
+    x_ref = x;
+    y_ref = y;
+  }
+  else {
+    switch(my_team_ID)
+    {
+      case 1:
+        x_ref = x + 10;
+        y_ref = y;
+        break;
+      case 2:
+        x_ref = x - 10;
+        y_ref = y;
+        break;
+      case 3:
+        x_ref = x + 5;
+        y_ref = y - 8.66;
+        break;
+      case 4:
+        x_ref = x - 5;
+        y_ref = y - 8.66;
+        break;
+      case 5:
+        x_ref = x + 5;
+        y_ref = y + 8.66;
+        break;
+      case 6:
+        x_ref = x - 5;
+        y_ref = y + 8.66;
+        break;
+      default:
+        break;
+    }
+  }
+
+}
+
+void inform_new_location(char* ext_ID_s) {
   /*
   
   we inform the new bot of it's new location in the team
@@ -679,6 +757,23 @@ void inform_new_location(ext_ID_s) {
   
   */
   
+  double *values = (double* )wb_gps_get_values(gps);
+  double x = values[2];
+  // double z = values[1];
+  double y = values[0];
+  
+  // bearing = get_bearing_in_degrees(compass);
+  // printf("preparing message with\n");
+  // printf("x %f and y %f\n", x, y);
+  recover_ref_pos(x, y, my_team_ID);
+  // printf("recovered ref\n");
+  // printf("x_ref %f and y_ref %f\n", x_ref, y_ref);
+  sprintf(x_ref_s, "%07.3f", x_ref);
+  sprintf(x_ref_s, "%07.3f", y_ref);
+  
+  construct_inform_location_message(my_ID_s, ext_ID_s, x_ref, y_ref, idx_team);
+  // printf("sending %s\n", message);
+  wb_emitter_send(emitter_bt, message, strlen(message) + 1);
 }
 
 ////////////////////////////////////////////
@@ -778,7 +873,7 @@ int main() {
   /* BT Comms */
   emitter_bt = wb_robot_get_device("bt_e");
   wb_emitter_set_channel(emitter_bt, COMMUNICATION_CHANNEL_BT);
-  wb_emitter_set_range(emitter_bt, 1.0);
+  wb_emitter_set_range(emitter_bt, 10.0);
   
   receiver_bt = wb_robot_get_device("bt_r");
   wb_receiver_enable(receiver_bt, TIME_STEP);
@@ -882,6 +977,7 @@ int main() {
     
     /* Initial message exchange - to be repeated every step to engage new bots */ 
     if (!(leader && idx_team > 3) || (!relay)) {
+      // printf("bbbbb\n");
       construct_discovery_message(my_ID, team_player, leader, idx_team, leader_ID_s); // saves the desired string in variable message
       wb_emitter_send(emitter_bt, message, strlen(message) + 1);
     }
@@ -890,9 +986,9 @@ int main() {
       if (leader)
         wb_led_set(leddl, 2);
       else if (relay)
-        wb_led_set(leddl, 3);
-      else
         wb_led_set(leddl, 4);
+      else
+        wb_led_set(leddl, 3);
     }
     
     /* Check for new messages and process them */
@@ -905,7 +1001,41 @@ int main() {
     /* Move to location */
     if (location_change) {
       /* calculate necessary movement */
+      double *values = (double* )wb_gps_get_values(gps);
+      double x = values[2];
+      // double z = values[1];
+      double y = values[0];
       
+      my_x = (x - x_ref) - x_goal;
+      my_y = (y - y_ref) - y_goal;
+      
+      // printf("my x: %f\n", x);
+      // printf("my y: %f\n", y);
+      // printf("my x wrt ref: %f\n", x-x_ref);
+      // printf("my y wrt ref: %f\n", y-y_ref);
+      // printf("my goal x: %f\n", x_goal);
+      // printf("my goal y: %f\n", y_goal);
+      // printf("my goal x wrt ref: %f\n", my_x);
+      // printf("my goal y wrt ref: %f\n", my_y);
+      
+      angle = atan2(my_y, my_x);
+      
+      if (my_y < 0) {
+        angle = 360 + (angle * 180 / M_PI);
+      }
+      else {
+        angle = angle * 180 / M_PI;
+      }
+      
+      angle_compass = get_bearing_in_degrees(compass);
+      
+      diff_angle = angle - angle_compass;
+      // printf("diff %f\n", diff_angle);
+      if (fabs(diff_angle) > 2) {
+        // printf("rotating\n");
+        speed[LEFT] = -150 * sign(my_y);
+        speed[RIGHT] = 150 * sign(my_y);
+      }
       /* if arrived reset the flag */
       
     }
@@ -943,7 +1073,10 @@ int main() {
     // for (i=0; i<idx_team; i++)
       // printf("%d id %d\n", i, team_IDs[i]);
     
-    if (leader) {
+    // wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]);
+    // wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]);
+      
+    if (!waiting_new_bot) {
       wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]); // speed[LEFT]);
       wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]); // speed[RIGHT]);
     }
