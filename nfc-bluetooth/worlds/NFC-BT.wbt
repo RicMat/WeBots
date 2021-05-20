@@ -100,7 +100,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 11
+      range 1
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -147,7 +147,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 0 0 1
+              color 0 1 0
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -175,7 +175,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 11
+      range 1
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -222,7 +222,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -297,7 +297,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE

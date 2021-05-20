@@ -194,7 +194,7 @@ void join_external_team(char* ext_ID_s, char* ext_leader_ID_s) {
     S - last_queued - Y if this is the last bot in queue
     
   */
-  printf("%d joining external team %s\n", my_ID, ext_leader_ID_s);
+  // printf("%d joining external team %s\n", my_ID, ext_leader_ID_s);
   if (idx_team > 0) {
     construct_join_team_message(my_ID_s, ext_ID_s, "000", 'N');
   }
@@ -446,7 +446,7 @@ void handle_message(char* buffer) {
   
   
   
-  printf("%d received %s\n", my_ID, buffer);
+  // printf("%d received %s\n", my_ID, buffer);
   
   
   
@@ -478,7 +478,7 @@ void handle_message(char* buffer) {
   duplicate_message = duplicate_message_check(code_in, ext_ID, receiver_ID, ttl, buffer+12, buffer);
 
   if (duplicate_message) {
-    printf("duplicate\n");
+    // printf("duplicate\n");
     return;
   }
   
@@ -490,7 +490,7 @@ void handle_message(char* buffer) {
     wb_emitter_send(emitter_bt, message, strlen(message) + 1);
   }
   
-  printf("code: %d\n",hash_codes(code_in)); 
+  // printf("code: %d\n",hash_codes(code_in)); 
   
   switch(hash_codes(code_in))
   {
@@ -512,7 +512,7 @@ void handle_message(char* buffer) {
       ext_leader_ID = atoi(ext_leader_ID_s);
       
       tmp = ext_team_size - '0';
-      printf("processing DNB\n");
+      // printf("processing DNB\n");
       
       if (tmp + team_size > 7) {
         // To Do:
@@ -582,7 +582,6 @@ void handle_message(char* buffer) {
       ////////
       // To Do: change it so that the team_ID (leader_ID) is in every message
       ////////
-        printf("wtf\n");
         break;
       }
       strncpy(leader_ID_s, buffer+15, 3);
@@ -1027,21 +1026,23 @@ int main() {
       my_x = (x - x_ref) - x_goal;
       my_y = (y - y_ref) - y_goal;
       
-      // if ((int)round(wb_robot_get_time()) % 8 == 0) {
-        // printf("my team ID: %i\n", my_team_ID);
-        // printf("my ref x: %f\n", x_ref);
-        // printf("my ref y: %f\n", y_ref);
-        // printf("my x: %f\n", x);
-        // printf("my y: %f\n", y);
-        // printf("my x wrt ref: %f\n", x-x_ref);
-        // printf("my y wrt ref: %f\n", y-y_ref);
-        // printf("my goal x: %f\n", x_goal+x_ref);
-        // printf("my goal y: %f\n", y_goal+y_ref);
-        // printf("my goal x wrt ref: %f\n", x_goal);
-        // printf("my goal y wrt ref: %f\n", y_goal);
-        // printf("x dist to my goal: %f\n", my_x);
-        // printf("y dist to my goal: %f\n", my_y);
-      // }
+      if ((int)round(wb_robot_get_time()) % 8 == 0) {
+        printf("my ID: %d\n", my_ID);
+        printf("my team ID: %i\n", my_team_ID);
+        printf("my leader ID: %i\n", leader_ID);
+        printf("my ref x: %f\n", x_ref);
+        printf("my ref y: %f\n", y_ref);
+        printf("my x: %f\n", x);
+        printf("my y: %f\n", y);
+        printf("my x wrt ref: %f\n", x-x_ref);
+        printf("my y wrt ref: %f\n", y-y_ref);
+        printf("my goal x: %f\n", x_goal+x_ref);
+        printf("my goal y: %f\n", y_goal+y_ref);
+        printf("my goal x wrt ref: %f\n", x_goal);
+        printf("my goal y wrt ref: %f\n", y_goal);
+        printf("x dist to my goal: %f\n", my_x);
+        printf("y dist to my goal: %f\n", my_y);
+      }
       
       angle = atan2(my_y, my_x);
       
