@@ -88,7 +88,7 @@ void construct_share_with_team_message(char* code_in, char* sender, char* receiv
   
   // printf("%s sending %s\n", sender, code_in);
   memset(message, 0, 34+1);
-  strcpy(message, code_in);
+  strcpy(message, code_in); // ITM
   strcat(message, sender);
   strcat(message, receiver);
   strcat(message, team_ID_s);
@@ -97,16 +97,16 @@ void construct_share_with_team_message(char* code_in, char* sender, char* receiv
   
 }
 
-void construct_inform_location_message(char* sender, char* receiver, char* team_ID_s, float x_ref, float y_ref, int team_idx) {
+void construct_inform_location_message(char* sender, char* receiver, char* team_ID_s, char* TTL,  float x_ref, float y_ref, int team_idx) {
   /* inform the bot of the reference location as well as its team_ID */
   
-  printf("%s sending location info to %s and my leader is %s\n", sender, receiver, team_ID_s);
+  // printf("%s sending location info to %s and my leader is %s\n", sender, receiver, team_ID_s);
   memset(message, 0, 34+1);
   strcpy(message, "ILM");
   strcat(message, sender);
   strcat(message, receiver);
   strcat(message, team_ID_s);
-  strcat(message, "000"); // TTL
+  strcat(message, TTL); // TTL
   sprintf(tmp_s, "%07.3f", x_ref);
   strcat(message, tmp_s);
   sprintf(tmp_s, "%07.3f", y_ref);
