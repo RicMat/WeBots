@@ -135,7 +135,7 @@ int team_IDs[7];
 
 /* Location */
 char x_ref_s[7+1], y_ref_s[7+1], my_x_s[7+1], my_y_s[7+1], my_team_idx_s[2];
-float x_ref, y_ref, my_x, my_y, x_goal, y_goal, bearing, angle, angle_compass, diff_angle;
+float x_ref, y_ref, my_x, my_y, x_goal, y_goal, bearing, team_bearing, angle, angle_compass, diff_angle;
 int my_team_idx = 0; // my role in the team
 bool location_change = false, new_bot = false, waiting_new_bot = false;
 
@@ -145,7 +145,7 @@ int messages_lookback_size[5] = { 0 };
 
 /* External connections */
 char ext_connection_ID_s[3+1];
-int ext_connection_ID = 0;
+int ext_connection_ID = 0, external_requests = 0;
 bool ext_connection_existing = false;
 // int comms_queue[7];
 
@@ -438,7 +438,11 @@ bool duplicate_message_check(char* code_in, int sender, int receiver, int ext_te
 }
 
 void handle_excess_bot(char* ext_ID_s) {
+  /*
   
+  If an external connection exists
+  
+  */
   if (ext_connection_existing) {
     float x_ext, y_ext = retrieve_closest_external_connection();
     redirect_bot_to_team(ext_ID_s, ext_connection_ID_s, );
@@ -527,11 +531,36 @@ void handle_message(char* buffer) {
         /*
   
           We inform our leader of the new request
-          The leader will receive two of these requests, calculate the best route and respond accordingly
+          The leader will calculate the best route and respond accordingly
+          
+          There are a few special cases:
+          -  If a full team locates a single bot then the leader of this second 
+             small team might end up in this place. In this case, the leader of this
+             second small taem will only store the info about the other bot
+          -  Otherwise we communicate the best route to the best of our knownledge 
+             (based on size and location). We do this by constructing an EBR message
+             for our leader who will do the calculations and return the info
+          In any case we'll save the bot in our external queue if empty.
+          If it is not empty, there are two cases:
+          -  The new bot is routed towards our pre-existing external bot. In this case
+             it makes no sense to save this bot again because it'll move outside of our range
+          - The new bot is routed somewhere else. In this case it also makes no sense to save it
+          In the first case however, we might end up in a situation where the new bot
+          will take the position of the old external bot (which in turn will move further away for some reason.
+          In this case we'll receive a different message and update the external bot later 
     
         */
         snprintf(tmp_ss, 4, "%03d", my_team_idx);
-        construct_share_with_team_message("EBR", my_ID_s, leader_ID_s, leader_ID_s, "000", tmp_ss);
+        
+        if (!leader) {
+          /* If the ext_bot is the leader of it's team, we just save it */
+          if (strcmp(ext_ID_s, ext_leader_ID_s) != 0) {
+            construct_share_with_team_message("EBR", my_ID_s, leader_ID_s, leader_ID_s, "000", tmp_ss);
+          }          
+        }
+        
+        store_external_connection(ext_ID_s, ext_leader_ID_s, ext_team_size);
+
         break;
       }
       
@@ -600,10 +629,7 @@ void handle_message(char* buffer) {
     SSS - ext_ID_s - ID of the external bot we are inglobating
     
     */
-    case 3: //"ITM" - Inform Team Member
-      
-      // in future we will work with codes - ITM should be a general message
-      
+    case 3: //"ITM" - Inform Team Member      
       /*
       
       There are two cases here:
@@ -657,7 +683,14 @@ void handle_message(char* buffer) {
     
     */
     case 5: // "EBR" - External Bot Request
+      /*
+      
+      This is a message that a slave sends to the leader
+      The leader will therefore check the available external connections and redirect the bot to the closest one
+      
+      */
       // store the id of the requesting bot
+      handle_excess_bot(ext_ID_s);
       //
       //
       //
@@ -666,16 +699,16 @@ void handle_message(char* buffer) {
       //
       //
       //
-      //
-      external_requests += 1;
+      // external_requests += 1;
       break;
     
   }
   
-  if (external_requests == 2) {
-    external_requests = 0;
-    handle_excess_bot(ext_ID_s);
-  }
+  // this makes no sense right now
+  // if (external_requests == 2) {
+    // external_requests = 0;
+    // handle_excess_bot(ext_ID_s);
+  // }
 }
 
 ////////////////////////////////////////////
