@@ -99,7 +99,7 @@ float turn;
 //
 //------------------------------------------------------------------------------
 
-void inform_new_location(char* ext_ID_s, char* TTL);
+void inform_new_location(char* ext_ID_s, char last);//* TTL);
 void handle_position_f(float x_ref, float y_ref, int my_team_idx);
 
 ////////////////////////////////////////////
@@ -282,7 +282,7 @@ void inglobate_external_team(char* ext_ID_s, char* TTL) {
   
   */  
   if (leader) {
-    inform_new_location(ext_ID_s, TTL);
+    inform_new_location(ext_ID_s, 'Y');//TTL);
     waiting_new_bot = true;
   }
   
@@ -439,7 +439,7 @@ bool duplicate_message_check(char* code_in, int sender, int receiver, int ext_te
   }
 }
 
-void handle_excess_bot(char* ext_ID_s) {
+// void handle_excess_bot(char* ext_ID_s) {
   /*
   
   If an external connection exists
@@ -466,7 +466,7 @@ void handle_excess_bot(char* ext_ID_s) {
   
   // share_information_external("LOC", ext_ID_s, x_ref_s, y_ref_s, team_bearing);
 
-}
+// }
 
 void handle_message(char* buffer) {
   /*
@@ -511,7 +511,8 @@ void handle_message(char* buffer) {
   ext_team_ID = atoi(ext_team_ID_s);
   strncpy(ttl_s, buffer+12, 3);
   ttl = atoi(ttl_s);
-    
+  
+  printf("%d received %s", my_ID, buffer);
   duplicate_message = duplicate_message_check(code_in, ext_ID, receiver_ID, ext_team_ID, ttl, buffer+12, buffer);
 
   if (duplicate_message) {
@@ -673,7 +674,7 @@ void handle_message(char* buffer) {
       }
       
       if (leader && !in_queue) {
-        inform_new_location(tmp_ss, "006"); // TTL set to 7 as the worst case
+        inform_new_location(tmp_ss, 'Y');//"006"); // TTL set to 7 as the worst case
         waiting_new_bot = true;
       }
     break;
@@ -709,7 +710,7 @@ void handle_message(char* buffer) {
     Variable
     
     */
-    case 5: // "EBR" - External Bot Request
+    // case 5: // "EBR" - External Bot Request
       /*
       
       This is a message that a slave sends to the leader
@@ -717,7 +718,7 @@ void handle_message(char* buffer) {
       
       */
       // store the id of the requesting bot
-      handle_excess_bot(ext_ID_s);
+      // handle_excess_bot(ext_ID_s);
       //
       //
       //
@@ -727,8 +728,9 @@ void handle_message(char* buffer) {
       //
       //
       // external_requests += 1;
+      // break;
+    default:
       break;
-    
   }
   
   // this makes no sense right now
@@ -846,7 +848,7 @@ void recover_ref_pos(float x, float y, int my_team_idx) {
 
 }
 
-void inform_new_location(char* ext_ID_s, char* TTL) {
+void inform_new_location(char* ext_ID_s, char last) {//* TTL) {
   /*
   
   we inform the new bot of it's new location in the team
@@ -867,7 +869,7 @@ void inform_new_location(char* ext_ID_s, char* TTL) {
   sprintf(x_ref_s, "%07.3f", x_ref);
   sprintf(y_ref_s, "%07.3f", y_ref);
   
-  construct_inform_location_message(my_ID_s, ext_ID_s, leader_ID_s, TTL, x_ref, y_ref, idx_team);
+  construct_inform_location_message(my_ID_s, ext_ID_s, leader_ID_s, "000", x_ref, y_ref, idx_team);
   wb_emitter_send(emitter_bt, message, strlen(message) + 1);
 }
 
@@ -946,6 +948,8 @@ int main() {
   /* intialize Webots */
   wb_robot_init();
   
+  printf("aaaa\n");
+  
   /* Prox Sensors */
   for (i = 0; i < NB_DIST_SENS; i++) {
     sprintf(name, "ps%d", i);
@@ -1017,11 +1021,11 @@ int main() {
       const char* idd = wb_supervisor_field_get_sf_string(field);
       if (atoi(idd + 5) == my_ID){ // we found this robot
         reset_simulation();
-        printf("%d reset, leader ID %d", my_ID, leader_ID);
         break;
       }
     }
-  } 
+  }
+   
   
   /* File setup */
   sprintf(filename, "Times%d_%d.txt", run, my_ID);
@@ -1047,9 +1051,7 @@ int main() {
         fprintf(fpt, "\nRun%d Size:%.1f\n", run, FLOOR_SIZE);
       }
     }
-     
-    printf("%d my ID, my leader %d\n", my_ID, leader_ID);
-    
+         
     /* Read Sensors Value */
     for (i = 0; i < NB_DIST_SENS; i++){
       ps_value[i] = (((int)wb_distance_sensor_get_value(ps[i]) - ps_offset[i]) < 0) ?
