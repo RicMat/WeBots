@@ -1017,7 +1017,6 @@ int main() {
       const char* idd = wb_supervisor_field_get_sf_string(field);
       if (atoi(idd + 5) == my_ID){ // we found this robot
         reset_simulation();
-        printf("%d reset, leader ID %d", my_ID, leader_ID);
         break;
       }
     }
@@ -1048,7 +1047,7 @@ int main() {
       }
     }
      
-    printf("%d my ID, my leader %d\n", my_ID, leader_ID);
+    printf("%d my ID\n", my_ID);
     
     /* Read Sensors Value */
     for (i = 0; i < NB_DIST_SENS; i++){
@@ -1171,8 +1170,7 @@ int main() {
       // printf("%d distance %f\n", my_ID, dist_to_goal);
     
     float dist_to_goal = sqrtf(my_x*my_x + my_y*my_y);
-    // printf("%d speed left %d right %d\n", my_ID, speed[LEFT], speed[RIGHT]);
-    
+ 
     if (dist_to_goal > 0.1 && !leader) {
       wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]); // speed[LEFT]);
       wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]); // speed[RIGHT]);
@@ -1185,6 +1183,7 @@ int main() {
         // printf("   speed left %d right %d\n", speed[LEFT], speed[RIGHT]);
       // }
     }
+    /*
     else if ((dist_to_goal <= 0.1 && location_change) && !leader) {
       if (dist_to_goal < min) {
         min = dist_to_goal;
@@ -1209,6 +1208,7 @@ int main() {
         return 0;
       }
     }
+    */
     else if (leader) {
       wb_motor_set_velocity(left_motor, 0); 
       wb_motor_set_velocity(right_motor, 0);

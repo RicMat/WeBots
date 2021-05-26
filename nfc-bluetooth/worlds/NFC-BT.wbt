@@ -6,7 +6,7 @@ WorldInfo {
 }
 Viewpoint {
   orientation 0.5783173175025412 0.5888653197923019 0.5646120043202897 4.227071288594503
-  position 0.42964258650451975 5.2043168792062175 1.2433232996426606
+  position -0.22730568718467947 2.194484447630438 1.1469435570231807
 }
 TexturedBackground {
 }
@@ -27,25 +27,8 @@ SolidPipe {
   height 0.3
   radius 0.05
 }
-DEF OBSTACLE1 Solid {
-  translation 6.19897 0.025 -1.64485
-  children [
-    Shape {
-      appearance PBRAppearance {
-        baseColor 0.5 0.5 0
-        roughness 0.5
-        metalness 0
-      }
-      geometry DEF BOX1 Box {
-        size 0.2 0.1 0.01
-      }
-    }
-  ]
-  name "red box"
-  boundingObject USE BOX1
-}
 E-puck {
-  translation 0 4.54082e-14 0
+  translation 0.0852678 4.54082e-14 0.880818
   name "epuck1"
   controller "test_comms_position"
   supervisor TRUE
@@ -121,8 +104,8 @@ E-puck {
   ]
 }
 E-puck {
-  translation 0.365837 -3.33067e-16 0.291781
-  rotation 0 1 0 0.2617989999999993
+  translation -0.4274 -3.33067e-16 0.516844
+  rotation 0 1 0 -0.523595307179586
   name "epuck2"
   controller "test_comms_position"
   supervisor TRUE
@@ -196,7 +179,7 @@ E-puck {
   ]
 }
 E-puck {
-  translation 0.763153 3.13083e-14 0.502512
+  translation -0.525168 3.13083e-14 1.52406
   rotation 0 1 0 0.2617989999999993
   name "epuck3"
   controller "test_comms_position"
@@ -271,7 +254,7 @@ E-puck {
   ]
 }
 E-puck {
-  translation 0.276805 -7.77151e-16 2.90457
+  translation 0.0508305 3.13083e-14 1.54851
   rotation 0 1 0 0.2617989999999993
   name "epuck4"
   controller "test_comms_position"
@@ -346,8 +329,8 @@ E-puck {
   ]
 }
 E-puck {
-  translation 0.53558 1.88738e-15 2.55005
-  rotation 0 1 0 0.2617989999999993
+  translation -0.614533 3.13083e-14 1.11127
+  rotation 0 1 0 -0.523595307179586
   name "epuck5"
   controller "test_comms_position"
   supervisor TRUE

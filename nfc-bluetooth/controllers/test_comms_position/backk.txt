@@ -1017,7 +1017,7 @@ int main() {
       const char* idd = wb_supervisor_field_get_sf_string(field);
       if (atoi(idd + 5) == my_ID){ // we found this robot
         reset_simulation();
-        printf("%d reset, leader ID %d", my_ID, leader_ID);
+        printf("%d reset, leader ID %d\n", my_ID, leader_ID);
         break;
       }
     }
