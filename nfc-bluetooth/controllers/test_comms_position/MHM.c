@@ -21,7 +21,7 @@ void construct_discovery_message(int my_ID, char team_player, char leader, int t
     strcat(message, "N");
   }
   
-  sprintf(tmp_s, "%1d", idx_team+1);
+  sprintf(tmp_s, "%03d", idx_team+1);
   strcat(message, tmp_s); // team_size
   
   if (leader) { // leader - if I'm leader of my team
@@ -34,7 +34,7 @@ void construct_discovery_message(int my_ID, char team_player, char leader, int t
   strcat(message, leader_ID_s); // leader_ID_s
 }
 
-void construct_join_team_message(char* sender, char* receiver, char* team_ID_s, char* TTL, char last_queued) {
+void construct_join_team_message(char* sender, char* receiver, char* team_ID_s, char* TTL, char* last_queued) {
   /* join other bot in a new team */
   /* sends a series of LJT messages for each bot in the team */
   /* if not the leader, update all the slaves of the change */
@@ -54,14 +54,14 @@ void construct_join_team_message(char* sender, char* receiver, char* team_ID_s, 
   strcat(message, receiver);
   strcat(message, team_ID_s);
   strcat(message, TTL);
-  strcat(message, &last_queued);
+  strcat(message, last_queued);
   
   // printf("sending %s  %c\n", message, last_queued);
   
 }
 
 void construct_transfer_team_message(char* sender, char* receiver, char* ext_team_ID_s, char* TTL, int team_idx) {
-  /* similar to the JTM */
+  /* similar to the LJT */
   /* we are here contacting our team members and requesting them to transfer to the new team*/
   
   /* message structure: 
