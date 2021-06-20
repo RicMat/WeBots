@@ -108,10 +108,10 @@ int team_IDs[7];
 
 /* Location */
 char x_ref_s[7+1], y_ref_s[7+1], my_x_s[7+1], my_y_s[7+1], my_team_idx_s[2];
-float x_ref, y_ref, my_x, my_y, x_goal, y_goal, bearing, team_bearing, angle, angle_compass, diff_angle;
+float x_ref, y_ref, my_x, my_y, x_goal, y_goal, bearing, team_bearing, angle, angle_compass, diff_angle = -1.0, dist_to_goal = -1.0;
 double x, y;
 int my_team_idx = 0; // my role in the team
-bool location_change = false, new_bot = false, waiting_new_bot = false;
+bool location_change = false, new_bot = false, waiting_new_bot = false, in_line = false;
 
 /* Stored messages - Could use an Hash Table */
 char messages_lookback[7][SIZE][34+1];
@@ -854,7 +854,7 @@ void handle_message(char* buffer) {
       }
       
       // if (ext_ID == 10)
-        printf("%d received DNB from %d\n", my_ID, ext_ID);
+        // printf("%d received DNB from %d\n", my_ID, ext_ID);
         
       if (ext_team_size + idx_team + 1 > 7 && !in_queue) { // idx_team starts from 0, so the number of bots is actually idx_team + 1
         // if (my_ID == 1) {
@@ -1503,7 +1503,7 @@ void RandomizeMovementModule(void) {
 ////////////////////////////////////////////
 // Main
 int main() {
-  
+  int printed = 0;
   /* intialize Webots */
   wb_robot_init();
   
@@ -1593,6 +1593,9 @@ int main() {
     fprintf(fpt, "Run%d Size:%.1f\n", run, FLOOR_SIZE);
   }
   
+  int turn_dist_counter = 0;
+  float backup = 0.0;
+  
   /* Main Loop */    
   while(wb_robot_step(TIME_STEP) != -1 && wb_robot_get_time() < (10800 * 5)) {  // Main loop - 5 times for max 3 hours each
     
@@ -1610,12 +1613,6 @@ int main() {
       }
     }
 
-    // printf("%d my ID, my leader %d\n", my_ID, leader_ID);
-    // printf("1 %f\n", (1.0 + ((float)(rand() % 6) / 10.0)));
-    // printf("2 %f\n", (1.0 + ((float)(rand() % 600) / 1.0)));
-    // printf("3 %f\n", ((float)rand() / (float)(RAND_MAX / (100 * FLOOR_SIZE))));
-    // printf("4 %f\n", ((float)rand() / (float)(RAND_MAX / (1000 * FLOOR_SIZE))));
-    
     /* Read Sensors Value */
     for (i = 0; i < NB_DIST_SENS; i++){
       ps_value[i] = (((int)wb_distance_sensor_get_value(ps[i]) - ps_offset[i]) < 0) ?
@@ -1660,35 +1657,7 @@ int main() {
         wb_led_set(leddl, 4);
       else
         wb_led_set(leddl, 3);
-    }    
-    
-    ///////
-    // To Do
-    ///////
-    
-    // if (mtl_active) {
-      // angle = angle_offset();
-      
-      // if (turn) { /* we are facing the right direction */
-        // forward_move = false;
-        // turn_towards_location();
-      // }
-      // else { /* turn until we face the right direction */
-        // forward_move = true;
-      // }
-      
-      // if (forward_move) {
-        // distance = calculate_distance_location();
-        // wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]);
-        // wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]);
-      // }
-      
-      // /* Arrived at location */
-      // if (mtl_arrived) {
-        // mtl_active = false;
-        // mtl_arrived = false;
-      // }
-    // }       
+    }         
       
     /*
     
@@ -1702,23 +1671,220 @@ int main() {
     */
     
     /* First of all we need to check whether we are requested to move somewhere because we are joining a team. */
-    // if (location_change && !in_line && !oam_active) {
-      /* We should do this until in line with the leader (when first join a team) or when redirected by leader */
+    if (location_change && !in_line && !oam_active) {
+      /* First we rotate */
+      if (diff_angle == -1.0) {
+        /* If this is the first time checking the angle, we do it */
+        double *values = (double* )wb_gps_get_values(gps);
+        x = values[2];
+        y = values[0];
+        // printf("%d x: %f, y: %f, x_goal: %f, y_goal: %f\n", my_ID, x, y, x_goal, y_goal);
+        
+        my_x = x - x_goal; 
+        my_y = y - y_goal;
+      
+        angle = atan2(my_y, my_x);
+        if (my_y < 0) {
+          angle = 360 + (angle * 180 / M_PI);
+        }
+        else {
+          angle = angle * 180 / M_PI;
+        }
+        
+        angle_compass = (get_bearing_in_degrees(compass));
+        if (angle_compass > 360)
+          angle_compass -= 360;
+      
+        diff_angle = angle - angle_compass; //fmod(fabs(angle - angle_compass), 360); // we lose the sign
+        if (fabs(diff_angle) > 180) {
+          diff_angle = sign(diff_angle) * (360.0 - fabs(diff_angle)) * (-1);
+        }
+        turn_dist_counter = 0;
+        backup = fabs(diff_angle);
+      }
+      
+      /* We check the angle 3 times along the way */
+      if (turn_dist_counter < 3) {
+        // printf("%d step 1\n", my_ID);
+        // printf("  my idx %d\n", my_team_idx);
+        // printf("  angle %f compass %f\n", angle, angle_compass);
+        // printf("  diff_angle %f, backup/3 %f\n", diff_angle, backup/3);
+        speed[LEFT] = -150 * sign(diff_angle);
+        speed[RIGHT] = 150 * sign(diff_angle);
+        diff_angle -= (sign(diff_angle) * 360.0/150.0);
+        
+        if (fabs(diff_angle) < (backup / 3) + 1 && fabs(diff_angle) > (backup / 3) - 1) {
+         // printf("%d step 2\n", my_ID);
+         // printf("  objective diff %f - backup %f = %f\n", diff_angle, (backup / 3), fabs(diff_angle) - (backup / 3));
+         angle_compass = (get_bearing_in_degrees(compass));
+         diff_angle = angle - angle_compass;
+         if (fabs(diff_angle) > 180) {
+          diff_angle = sign(diff_angle) * (360.0 - fabs(diff_angle)) * (-1);
+         }
+         // printf("  recalc angle %f compass %f\n", angle, angle_compass);
+         // printf("  recalc diff_angle %f\n", diff_angle);
+         backup = fabs(diff_angle);
+         turn_dist_counter += 1;
+        }
+        
+        if (fabs(diff_angle) < 2) {
+          // printf("%d step 3\n", my_ID);
+          dist_to_goal = sqrtf(my_x*my_x + my_y*my_y);
+          // printf("%d initial distance %f\n", my_ID, dist_to_goal);
+          // printf("  initial angle offset %f\n", diff_angle);
+          backup = dist_to_goal;
+          turn_dist_counter = 0;
+          in_line = true;
+        }
+      }
+      else {
+        // printf("%d step 4\n", my_ID);
+        speed[LEFT] = -150 * sign(diff_angle);
+        speed[RIGHT] = 150 * sign(diff_angle);
+        diff_angle -= (sign(diff_angle) * 360.0/150.0);
+        if (fabs(diff_angle) < 2) {
+          dist_to_goal = sqrtf(my_x*my_x + my_y*my_y);
+          // printf("%d initial distance %f\n", my_ID, dist_to_goal);
+          // printf("  initial angle offset %f\n", diff_angle);
+          backup = dist_to_goal;
+          turn_dist_counter = 0;
+          in_line = true;
+        }
+      }
+      // if (fmod(fabs(diff_angle), 360) > 2) {
+        // printf("%d step 3\n", my_ID);
+        /* 300 steps to turn 360 degrees */
+        // speed[LEFT] = -150 ;// * sign(diff_angle);
+        // speed[RIGHT] = 150; //  * sign(diff_angle);
+        // printf("  left: %d, right %d\n", speed[LEFT], speed[RIGHT]);
+        // diff_angle -= (sign(diff_angle) * 360.0/300.0);
+        // angle_compass = (get_bearing_in_degrees(compass) + 90);
+        // diff_angle = angle - angle_compass;
+        // if (my_ID == 13)
+          // printf("%f\n", diff_angle);
+        /* We do not move forward so we can stop here */
+      // }
+      // else {
+        /* We are not considering the following case: we meet an obstacle and our direction gets updated */
+      
+        /* We are in line with the goal, so we can calculate the distance */
+        // if (dist_to_goal == -1 || oam_reset) 
+        // printf("%d step 4\n", my_ID);
+        // dist_to_goal = sqrtf(my_x*my_x + my_y*my_y);
+        // printf("%d dist %f\n", my_ID, dist_to_goal);
+        // in_line = true;
+      // }
+      /* Transfer outside: We should do this until in line with the leader (when first join a team) or when redirected by leader */
       // update_movement_direction();
       
-      /* Reset flag */
       
-    // }
+      /* Reset flag */
+
+    }
     
-    /* If we reached our target location, we have to update our orientation to match the team's */
-    // dist_to_goal = sqrtf(my_x*my_x + my_y*my_y);
     
-    // if ( --- ) {
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    // divide the dist by 4 and divide the angle by 4 so we can update the values
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    /* Once we are in line for moving to the goal location, we can start move */
+    if (turn_dist_counter < 2 && dist_to_goal > 0.1 && in_line) {
+      speed[LEFT] = 150;
+      speed[RIGHT] = 150;
+      dist_to_goal -= 1.0/829;
+      if (dist_to_goal < (backup / 3) + 1 && dist_to_goal > (backup / 3) - 1) {
+        double *values = (double* )wb_gps_get_values(gps);
+        x = values[2];
+        y = values[0];
+        
+        my_x = x - x_goal; 
+        my_y = y - y_goal;
+        
+        // printf("%d wrong distance %f\n", my_ID, dist_to_goal);
+        dist_to_goal = sqrtf(my_x*my_x + my_y*my_y);
+        // printf("  recalc distance %f\n", dist_to_goal);
+        angle_compass = (get_bearing_in_degrees(compass));
+        diff_angle = angle - angle_compass;
+        if (fabs(diff_angle) > 180) {
+         diff_angle = sign(diff_angle) * (360.0 - fabs(diff_angle)) * (-1);
+        }
+        // printf("  angle offset %f\n", diff_angle);
+        backup = dist_to_goal;
+        turn_dist_counter += 1;
+      }
+        
+    }
+    
+    if (turn_dist_counter >= 2 && dist_to_goal > 0.1 && in_line) {
+      // printf("%d step 5 -\n", my_ID);
+      speed[LEFT] = 150;
+      speed[RIGHT] = 150;
+      /* 53:56 / 16 = 53056 / 64 = 829 steps to move 1 meter */
+      dist_to_goal -= 1.0/829; //3317.0;
+      // if (my_ID == 4)
+        // printf("dist %f\n", dist_to_goal);
+    }
+    
+    if (dist_to_goal < 0.1 && dist_to_goal > 0.0) {
+      // printf("%d step 6 - -\n", my_ID);
+      /* arrived */
+      speed[LEFT] = 0.0;
+      speed[RIGHT] = 0.0;
+      if (printed == 0) {
+        double *values = (double* )wb_gps_get_values(gps);
+        x = values[2];
+        y = values[0];
+        
+        my_x = x - x_goal; 
+        my_y = y - y_goal;
+        
+        printf("%d arrived\n", my_ID);
+        printf("  leader %d, my idx %d\n", leader_ID, my_team_idx);
+        printf("  fake error cm %f\n", dist_to_goal*100);
+        printf("  actual error cm %f\n", sqrtf(my_x*my_x + my_y*my_y)*100);
+        printf("  reference x %f y %f\n", x_ref, y_ref);
+        printf("  goal x %f y %f\n", x_goal, y_goal);
+        printf("  real x %f y %f\n", x, y);
+        printf("  my x %f y %f\n", my_x, my_y);
+        printed = 1;
+      }
+      
+    }
+    
+    // if (my_ID == 1)
+      // printf("%d leader: %d, location_change: %d, waiting_new_bot: %d\n", my_ID, leader, location_change, waiting_new_bot);
+    
+    if (leader && !location_change && waiting_new_bot) {
+      speed[LEFT] = 0.0;
+      speed[RIGHT] = 0.0;
+    }
+    /* If we reached our target location, we have to update our orientation to match the team's one */
+    
+    // if ( --- ) 
       /* If the distance is small enough, we diirectly turn in place to match the team's orientation */
       
       /* Reset the flag if the angle is correct */
       
-    // }
+    // 
     
     
     
@@ -1732,144 +1898,32 @@ int main() {
     
     
     /* Last case, we move randomly */
-    // if (dist_to_goal > 0.1) {
-      
+    // if (!team_player) {
+      // randomize_movement();
     // }
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    /* Move to location */
-    if (location_change && !oam_active) {
-      /* calculate necessary movement */
-      double *values = (double* )wb_gps_get_values(gps);
-      x = values[2];
-      // double z = values[1];
-      y = values[0];
-      
-      my_x = x - x_goal; //(x - x_ref) - x_goal;
-      my_y = y - y_goal; //(y - y_ref) - y_goal;
-      
-      angle = atan2(my_y, my_x);
-      
-      if (my_y < 0) {
-        angle = 360 + (angle * 180 / M_PI);
-      }
-      else {
-        angle = angle * 180 / M_PI;
-      }
-      
-      angle_compass = get_bearing_in_degrees(compass);
-      
-      diff_angle = angle - angle_compass;
-      
-      if (fabs(diff_angle) > 2 && (my_y > 0.01 || my_y < -0.01)) {
-        speed[LEFT] = -150  * sign(diff_angle);
-        speed[RIGHT] = 150  * sign(diff_angle);
-      }
-
-      /* if arrived reset the flag */
-      
-    }
-    
-    float dist_to_goal = sqrtf(my_x*my_x + my_y*my_y);
-    
-    if (dist_to_goal > 0.1) {// && !leader)
-      // printf("%d I'm here 1\n", my_ID);
-      // if (my_ID == 2)
-        // printf("%d case 1\n", my_ID);
-      wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]); // speed[LEFT]);
-      wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]); // speed[RIGHT]);
-      // if (my_ID == 8 ) {//&& dist_to_goal < 0.2) {
-        // printf("%d distance %f\n", my_ID, dist_to_goal);
-        // printf("   x %f y %f\n", x, y);
-        // printf("   my x %f my y %f\n", my_x, my_y);
-        // printf("   angle %f\n", angle);
-        // printf("   angle compass %f\n", angle_compass);
-        // printf("   speed left %d right %d\n", speed[LEFT], speed[RIGHT]);
-      // }
-    }
-    else if ((dist_to_goal <= 0.1 && location_change)){ // && !leader)
-      // if (my_ID == 2)
-        // printf("%d case 2\n", my_ID);
-      if (dist_to_goal < min) {
-        min = dist_to_goal;
-        count = 0;
-        wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]); // speed[LEFT]);
-        wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]); // speed[RIGHT]);
-      }
-      else {
-        count += 1;
-        wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]);
-        wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]);
-      }
-      
-      if (count > 3) {
-        double *values = (double* )wb_gps_get_values(gps);
-        x = values[2];
-        y = values[0];
+    // if (my_ID == 3)
+      // printf("  left: %d, right %d\n", speed[LEFT], speed[RIGHT]);
         
-        printf("%d arrived\n", my_ID);
-        printf("  leader %d\n", leader_ID);
-        printf("  error cm %f\n", dist_to_goal*100);
-        printf("  reference x %f y %f\n", x_ref, y_ref);
-        printf("  goal x %f y %f\n", x_goal, y_goal);
-        printf("  real x %f y %f\n", x, y);
-        printf("  my x %f y %f\n", my_x, my_y);
-        // printf("   my x %f y %f\n", x, y);
-        // * sign(my_y) * (-1)
-        wb_motor_set_velocity(left_motor, 0); 
-        wb_motor_set_velocity(right_motor, 0);
-        // wb_robot_cleanup();
-        location_change = false;
-        // return 0;
-      }
-    }
-    else if (leader && !location_change && !waiting_new_bot) {
-      // printf("%d I'm here 2\n", my_ID);
-      // if (my_ID == 2)
-        // printf("%d case 3\n", my_ID);
-      // wb_motor_set_velocity(left_motor, 0.0); 
-      // wb_motor_set_velocity(right_motor, 0.0);
-      wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]);//.00628 * 150); 
-      wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]);//.00628 * 150);
-      wb_led_set(leddl, 6);
-    }
-    else if (!team_player) {
-      // printf("%d I'm here 3\n", my_ID);
-      wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]);//.00628 * 150); 
-      wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]);//.00628 * 150);
-      wb_led_set(leddl, 6);
-    }
-    else {
-      // printf("%d I'm here 4\n", my_ID);
-      // printf("%d I'm here\n", my_ID);
-      wb_motor_set_velocity(left_motor, 0.0);//.00628 * 150); 
-      wb_motor_set_velocity(right_motor, 0.0);//.00628 * 150);
-      wb_led_set(leddl, 5);
-    }
-    // printf("%d team ID: %d team index: %d team size: %d\n", my_ID, leader_ID, my_team_idx, idx_team+1);
-    // printf("  ");
-    // for (i=0; i<idx_team; i++) {
-      // printf("%d ", team_IDs[i]);
-    // }
-    // printf("\n");
-    // printf("  excess bot: %s\n", ext_connection.ext_ID_s);
+    wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]);
+    wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]);
+    // printf("%d my team id: %d\n", my_ID, idx_team);
+    // printf("%d my goal x: %f goal y: %f\n", my_ID, x_goal, y_goal);
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
   }
   
   fclose(fpt);
