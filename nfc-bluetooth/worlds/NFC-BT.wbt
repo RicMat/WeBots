@@ -3,11 +3,10 @@ WorldInfo {
   basicTimeStep 16
   coordinateSystem "NUE"
   lineScale 0.04
-  randomSeed -1
 }
 Viewpoint {
   orientation 0.5970469990922374 0.5542084120361124 0.5799895834438448 4.178495800090865
-  position -1.7912896316270006 10.387638185975678 -0.24200607178651767
+  position -1.9596791598068644 6.683993833276675 -0.23712450130547133
 }
 TexturedBackground {
 }
@@ -78,10 +77,8 @@ E-puck {
     }
     GPS {
       scale 0.01 0.01 0.01
-      accuracy 1
     }
     Compass {
-      rotation 0 1 0 1.5708003061004252
     }
     DEF EMITTER Emitter {
       name "bt_e"
@@ -136,7 +133,7 @@ E-puck {
   translation -2.0774 -3.33067e-16 12.2533
   rotation 0 1 0 -0.523595307179586
   name "epuck2"
-  controller ""
+  controller "test_comms_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -159,7 +156,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 0 0 0
+              color 0 1 0
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -361,7 +358,7 @@ E-puck {
   translation -1.81849 2.77556e-14 12.1972
   rotation 0 1 0 0.785402
   name "epuck5"
-  controller ""
+  controller "test_comms_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -384,7 +381,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 0 0 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -436,7 +433,7 @@ E-puck {
   translation -2.38257 3.26406e-14 12.1399
   rotation 0 1 0 -0.523595307179586
   name "epuck6"
-  controller ""
+  controller "test_comms_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -459,7 +456,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 0 0 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -511,7 +508,7 @@ E-puck {
   translation -2.33553 3.13083e-14 12.4897
   rotation 0 1 0 -0.523595307179586
   name "epuck7"
-  controller ""
+  controller "test_comms_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -534,7 +531,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 0 0 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -661,7 +658,7 @@ E-puck {
   translation -1.91787 0.02 12.612
   rotation 0 1 0 -0.523595307179586
   name "epuck9"
-  controller ""
+  controller "test_comms_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -684,7 +681,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 0 0 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -736,7 +733,7 @@ E-puck {
   translation -12.976 0.02 3.72831
   rotation 0 1 0 1.309
   name "epuck10"
-  controller ""
+  controller "test_comms_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -759,7 +756,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 0 0 0
+              color 1 0 0
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -811,7 +808,7 @@ E-puck {
   translation -2.04695 0.02 11.7765
   rotation 0 -1 0 -5.307179586466759e-06
   name "epuck11"
-  controller ""
+  controller "test_comms_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -834,7 +831,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 0 0 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -1036,7 +1033,7 @@ E-puck {
   translation -1.96489 3.13083e-14 -10.3422
   rotation 0 1 0 2.61799
   name "epuck14"
-  controller ""
+  controller "test_comms_position"
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -1059,7 +1056,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 0 0 0
+              color 1 0 0
               intensity 0.5
               location 0 0.03 0
               on FALSE

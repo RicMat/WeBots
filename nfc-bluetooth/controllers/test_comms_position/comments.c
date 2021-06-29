@@ -143,3 +143,38 @@
     printf("\n");
     printf("  excess bot: %s\n", ext_connection.ext_ID_s);
   // }
+  
+  
+  
+  
+///////////
+//
+// Perfect positioning
+//
+///////////
+
+ // if (fmod(fabs(diff_angle), 360) > 2) {
+        // printf("%d step 3\n", my_ID);
+        /* 300 steps to turn 360 degrees */
+        // speed[LEFT] = -150 ;// * sign(diff_angle);
+        // speed[RIGHT] = 150; //  * sign(diff_angle);
+        // printf("  left: %d, right %d\n", speed[LEFT], speed[RIGHT]);
+        // diff_angle -= (sign(diff_angle) * 360.0/300.0);
+        // angle_compass = (get_bearing_in_degrees(compass) + 90);
+        // diff_angle = angle - angle_compass;
+        // if (my_ID == 13)
+          // printf("%f\n", diff_angle);
+        /* We do not move forward so we can stop here */
+      // }
+      // else {
+        /* We are not considering the following case: we meet an obstacle and our direction gets updated */
+      
+        /* We are in line with the goal, so we can calculate the distance */
+        // if (dist_to_goal == -1 || oam_reset) 
+        // printf("%d step 4\n", my_ID);
+        // dist_to_goal = sqrtf(my_x*my_x + my_y*my_y);
+        // printf("%d dist %f\n", my_ID, dist_to_goal);
+        // in_line = true;
+      // }
+      /* Transfer outside: We should do this until in line with the leader (when first join a team) or when redirected by leader */
+      // update_movement_direction();

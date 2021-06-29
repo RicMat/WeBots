@@ -32,13 +32,19 @@
 #define OAM_K_PS_00 1.4 
 #define OAM_K_MAX_DELTAS 600
 
+extern WbDeviceTag gps, compass;
+
 extern int ps_value[NB_DIST_SENS];
-extern int oam_active, oam_reset, oam_obst, obst_direction;
+extern int my_ID, oam_active, oam_reset, oam_obst, obst_direction;
 extern int oam_speed[2], speed[2];
-extern int oam_side;
-extern int message_sent;
-extern int oam_reset_counter;
+extern int oam_side, message_sent, oam_reset_counter, turn_dist_counter;
+extern float my_x, my_y, x_goal, y_goal, angle, diff_angle, angle_compass, backup, dist_to_goal;
+extern double x, y;
+extern bool location_change, location_change, new_bot, waiting_new_bot, in_line;
 
 void obstacle_avoidance(void);
+void handle_rotation(float g_angle);
+double get_bearing_in_degrees(WbDeviceTag compass);
+int sign(float number);
 
 #endif 

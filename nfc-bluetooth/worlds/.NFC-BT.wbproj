@@ -1,5 +1,5 @@
 Webots Project File version R2021a
-perspectives: 000000ff00000000fd00000003000000000000008700000369fc0100000001fb0000001a0044006f00630075006d0065006e0074006100740069006f006e0000000000ffffffff0000008700ffffff00000001000002580000025bfc0200000001fb0000001400540065007800740045006400690074006f007201000000000000025b0000008b00ffffff00000003000005a00000010cfc0100000001fb0000001a0043006f006e0073006f006c00650041006c006c0041006c006c0100000000000005a00000008700ffffff000003460000025b00000001000000020000000100000008fc00000000
+perspectives: 000000ff00000000fd00000003000000000000008700000369fc0100000001fb0000001a0044006f00630075006d0065006e0074006100740069006f006e0000000000ffffffff0000008700ffffff00000001000002a900000239fc0200000001fb0000001400540065007800740045006400690074006f00720100000000000002390000008b00ffffff00000003000005a00000012efc0100000001fb0000001a0043006f006e0073006f006c00650041006c006c0041006c006c0100000000000005a00000008700ffffff000002f50000023900000001000000020000000100000008fc00000000
 simulationViewPerspectives: 000000ff0000000100000002000000fa000001490100000002010000000101
 sceneTreePerspectives: 000000ff0000000100000002000000c0000000fb0100000002010000000201
 minimizedPerspectives: 000000ff00000000fd00000003000000000000000000000000fc0100000001fb0000001a0044006f00630075006d0065006e0074006100740069006f006e0000000000ffffffff0000008700ffffff0000000100000256000002a5fc0200000001fb0000001400540065007800740045006400690074006f00720100000000000002a50000008b00ffffff00000003000005a0000000c2fc0100000001fb0000001a0043006f006e0073006f006c00650041006c006c0041006c006c0100000000000005a00000008700ffffff00000348000002a500000001000000020000000100000008fc00000000
@@ -8,20 +8,20 @@ centralWidgetVisible: 1
 projectionMode: PERSPECTIVE
 renderingMode: PLAIN
 orthographicViewHeight: 1
-textFiles: 0 "controllers/test_comms_position/test_comms_position.c" "controllers/test_comms_position/ETM.c" "controllers/test_comms_position/ETM.h" "controllers/test_comms_position/MHM.c" "controllers/test_comms_position/MHM.h" "controllers/test_comms_position/Makefile" "controllers/test_comms_position/OAM.c" "controllers/test_comms_position/comments.c"
+textFiles: 0 "controllers/test_comms_position/test_comms_position.c" "controllers/test_comms_position/OAM.c" "controllers/test_comms_position/OAM.h" "controllers/test_comms_position/ETM.c" "controllers/test_comms_position/ETM.h" "controllers/test_comms_position/MHM.c" "controllers/test_comms_position/MHM.h" "controllers/test_comms_position/comments.c"
 globalOptionalRendering: DistanceSensorRays::RangeFinderFrustums::CoordinateSystem::PenPaintingRays
 consoles: Console:All:All
-renderingDevicePerspectives: epuck10:camera;1;1;0;0
-renderingDevicePerspectives: epuck11:camera;1;1;0;0
-renderingDevicePerspectives: epuck12:camera;1;1;0;0
-renderingDevicePerspectives: epuck13:camera;1;1;0;0
-renderingDevicePerspectives: epuck14:camera;1;1;0;0
+renderingDevicePerspectives: epuck10:camera;1;0.820513;0;0
+renderingDevicePerspectives: epuck11:camera;1;0.820513;0;0
+renderingDevicePerspectives: epuck12:camera;1;0.820513;0;0
+renderingDevicePerspectives: epuck13:camera;1;0.820513;0;0
+renderingDevicePerspectives: epuck14:camera;1;0.820513;0;0
 renderingDevicePerspectives: epuck1:camera;0;0.820513;0;0
 renderingDevicePerspectives: epuck2:camera;0;0.820513;0;0
 renderingDevicePerspectives: epuck3:camera;1;0.820513;0;0
-renderingDevicePerspectives: epuck4:camera;1;1;0;0
-renderingDevicePerspectives: epuck5:camera;1;1;0;0
-renderingDevicePerspectives: epuck6:camera;1;1;0;0
-renderingDevicePerspectives: epuck7:camera;1;1;0;0
-renderingDevicePerspectives: epuck8:camera;1;1;0;0
-renderingDevicePerspectives: epuck9:camera;1;1;0;0
+renderingDevicePerspectives: epuck4:camera;1;0.820513;0;0
+renderingDevicePerspectives: epuck5:camera;1;0.820513;0;0
+renderingDevicePerspectives: epuck6:camera;1;0.820513;0;0
+renderingDevicePerspectives: epuck7:camera;1;0.820513;0;0
+renderingDevicePerspectives: epuck8:camera;1;0.820513;0;0
+renderingDevicePerspectives: epuck9:camera;1;0.820513;0;0
