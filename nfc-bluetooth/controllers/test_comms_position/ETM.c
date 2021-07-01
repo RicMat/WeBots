@@ -15,6 +15,7 @@ void store_external_connection(char* ext_ID_s, char* ext_leader_ID_s, int ext_te
   strcpy(ext_connection.ext_ID_s, ext_ID_s);
   strcpy(ext_connection.ext_leader_ID_s, ext_leader_ID_s);
   ext_connection.size += ext_team_size;
+  ext_connection.arrived = 0;
 }
 
 int retrieve_closest_external_connection(int hop_team_idx, int ext_team_size) {

@@ -14,6 +14,7 @@ typedef struct ExtConnection
   char ext_ID_s[3+1];
   char ext_leader_ID_s[3+1];
   int size;
+  int arrived;
 } conn;
 
 extern conn ext_connection;
