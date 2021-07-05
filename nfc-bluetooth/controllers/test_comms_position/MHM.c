@@ -6,7 +6,7 @@
 
 void construct_discovery_message(int my_ID, char team_player, char leader, int team_size, char* leader_ID_s) {
   
-  memset(message, 0, 34+1);
+  memset(message, 0, 37+1);
   strcpy(message, "DNB"); // code_in
   sprintf(tmp_s, "%03d", my_ID);
   strcat(message, tmp_s); // sender
@@ -48,7 +48,7 @@ void construct_join_team_message(char* sender, char* receiver, char* team_ID_s, 
     S - last_queued - Y if this is the last bot in queue
     
   */
-  memset(message, 0, 34+1);
+  memset(message, 0, 37+1);
   strcpy(message, "LJT");
   strcat(message, sender);
   strcat(message, receiver);
@@ -73,7 +73,7 @@ void construct_transfer_team_message(char* sender, char* receiver, char* ext_tea
     SSS - ext_leader_ID - ID of the external leader (new leader)
     
   */
-  memset(message, 0, 34+1);
+  memset(message, 0, 37+1);
   strcpy(message, "TTT");
   strcat(message, sender);
   strcat(message, receiver);
@@ -87,7 +87,7 @@ void construct_transfer_team_message(char* sender, char* receiver, char* ext_tea
 void construct_share_with_team_message(char* code_in, char* sender, char* receiver, char* team_ID_s, char* TTL, char* extra) {
   
   // printf("%s sending %s\n", sender, code_in);
-  memset(message, 0, 34+1);
+  memset(message, 0, 37+1);
   strcpy(message, code_in); // ITM
   strcat(message, sender);
   strcat(message, receiver);
@@ -101,7 +101,7 @@ void construct_inform_location_message(char* sender, char* receiver, char* team_
   /* inform the bot of the reference location as well as its team_ID */
   
   // printf("%s sending location info to %s and my leader is %s\n", sender, receiver, team_ID_s);
-  memset(message, 0, 34+1);
+  memset(message, 0, 37+1);
   strcpy(message, "ILM");
   strcat(message, sender);
   strcat(message, receiver);

@@ -178,3 +178,50 @@
       // }
       /* Transfer outside: We should do this until in line with the leader (when first join a team) or when redirected by leader */
       // update_movement_direction();
+      
+      
+      
+      
+      
+      
+      
+///////////
+//
+//
+//  Working divided into 3 steps
+//
+//
+///////////
+
+
+if (location_change && !in_line && !oam_active) {
+      /* First we rotate */
+      handle_rotation(-1.0);
+      /* Reset flag */
+
+    }    
+    /* Once we are in line for moving to the goal location, we can start move */
+    else if (turn_dist_counter < 2 && dist_to_goal > 0.1 && in_line) {
+      speed[LEFT] = 150;
+      speed[RIGHT] = 150;
+      dist_to_goal -= 1.0/829;
+      if (dist_to_goal < (backup / 3) + 1 && dist_to_goal > (backup / 3) - 1) {
+        double *values = (double* )wb_gps_get_values(gps);
+        x = values[2];
+        y = values[0];
+        
+        my_x = x - x_goal; 
+        my_y = y - y_goal;
+        
+        dist_to_goal = sqrtf(my_x*my_x + my_y*my_y);
+        backup = dist_to_goal;
+        turn_dist_counter += 1;
+      }
+        
+    }
+    else if (turn_dist_counter >= 2 && dist_to_goal > 0.1 && in_line) {
+      speed[LEFT] = 150;
+      speed[RIGHT] = 150;
+      /* 53:56 / 16 = 53056 / 64 = 829 steps to move 1 meter */
+      dist_to_goal -= 1.0/829; //3317.0;
+    }

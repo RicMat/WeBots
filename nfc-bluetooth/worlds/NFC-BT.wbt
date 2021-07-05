@@ -5,15 +5,15 @@ WorldInfo {
   lineScale 0.04
 }
 Viewpoint {
-  orientation 0.5970469990922374 0.5542084120361124 0.5799895834438448 4.178495800090865
-  position -1.9596791598068644 6.683993833276675 -0.23712450130547133
+  orientation 0.5798127056590108 0.5658124236095867 0.5862367505073555 4.161978747179303
+  position 6.72414140404555 85.47734485097607 16.320794887288013
 }
 TexturedBackground {
 }
 TexturedBackgroundLight {
 }
 RectangleArena {
-  rotation 1 0 0 0
+  translation -0.0141011 0 0.124608
   floorSize 100 100
   floorTileSize 0.25 0.25
   floorAppearance Parquetry {
@@ -29,6 +29,7 @@ SolidPipe {
 }
 E-puck {
   translation -1.96489 4.54082e-14 0.342212
+  rotation 0 1 0 -1.047195307179586
   name "epuck1"
   controller "test_comms_position"
   supervisor TRUE
@@ -82,7 +83,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 10
+      range 11
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -184,7 +185,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 10
+      range 11
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -259,7 +260,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 10
+      range 11
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -306,7 +307,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 0 0 1
+              color 1 1 0
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -334,7 +335,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 10
+      range 11
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -409,7 +410,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 10
+      range 11
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -484,7 +485,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 10
+      range 11
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -559,7 +560,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 10
+      range 11
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -634,7 +635,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 10
+      range 11
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -709,7 +710,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 10
+      range 11
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -730,84 +731,9 @@ E-puck {
   ]
 }
 E-puck {
-  translation -12.976 0.02 3.72831
-  rotation 0 1 0 1.309
+  translation -14.2563 0.02 4.62675
+  rotation 0 1 0 -1.047195307179586
   name "epuck10"
-  controller "test_comms_position"
-  supervisor TRUE
-  battery [
-    1800000, 1800000, 2
-  ]
-  turretSlot [
-    LED {
-      translation 0 0.001 -0.01
-      children [
-        Group {
-          children [
-            Shape {
-              appearance PBRAppearance {
-                baseColor 0.74902 0.74902 0.74902
-                roughness 1
-                metalness 0
-              }
-              geometry DEF LED_SHAPE Sphere {
-                radius 0.01
-              }
-            }
-            PointLight {
-              attenuation 0 0 1
-              color 1 0 0
-              intensity 0.5
-              location 0 0.03 0
-              on FALSE
-              castShadows TRUE
-            }
-          ]
-        }
-      ]
-      name "ledd"
-      color [
-        1 0 0
-        0 1 0
-        0 0 1
-        1 1 0
-        0 1 1
-        1 0 1
-        1 0.647059 0
-        0.627451 0.12549 0.941176
-        0.545098 0.411765 0.0784314
-      ]
-    }
-    GPS {
-    }
-    Compass {
-    }
-    DEF EMITTER Emitter {
-      name "bt_e"
-      range 10
-      channel 2
-    }
-    DEF RECEIVER Receiver {
-      name "bt_r"
-      channel 2
-    }
-    DEF EMITTER Emitter {
-      translation 0 0 -0.04
-      name "nfc_e"
-      range 0.06
-      channel 1
-    }
-    DEF RECEIVER Receiver {
-      translation 0 0 -0.04
-      name "nfc_r"
-      channel 1
-    }
-  ]
-}
-E-puck {
-  translation -2.04695 0.02 11.7765
-  rotation 0 -1 0 -5.307179586466759e-06
-  name "epuck11"
   controller "test_comms_position"
   supervisor TRUE
   battery [
@@ -859,7 +785,82 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 10
+      range 11
+      channel 2
+    }
+    DEF RECEIVER Receiver {
+      name "bt_r"
+      channel 2
+    }
+    DEF EMITTER Emitter {
+      translation 0 0 -0.04
+      name "nfc_e"
+      range 0.06
+      channel 1
+    }
+    DEF RECEIVER Receiver {
+      translation 0 0 -0.04
+      name "nfc_r"
+      channel 1
+    }
+  ]
+}
+E-puck {
+  translation -2.04145 0.02 11.9664
+  rotation 0 -1 0 -5.307179586466759e-06
+  name "epuck11"
+  controller "test_comms_position"
+  supervisor TRUE
+  battery [
+    1800000, 1800000, 2
+  ]
+  turretSlot [
+    LED {
+      translation 0 0.001 -0.01
+      children [
+        Group {
+          children [
+            Shape {
+              appearance PBRAppearance {
+                baseColor 0.74902 0.74902 0.74902
+                roughness 1
+                metalness 0
+              }
+              geometry DEF LED_SHAPE Sphere {
+                radius 0.01
+              }
+            }
+            PointLight {
+              attenuation 0 0 1
+              color 1 1 0
+              intensity 0.5
+              location 0 0.03 0
+              on FALSE
+              castShadows TRUE
+            }
+          ]
+        }
+      ]
+      name "ledd"
+      color [
+        1 0 0
+        0 1 0
+        0 0 1
+        1 1 0
+        0 1 1
+        1 0 1
+        1 0.647059 0
+        0.627451 0.12549 0.941176
+        0.545098 0.411765 0.0784314
+      ]
+    }
+    GPS {
+    }
+    Compass {
+    }
+    DEF EMITTER Emitter {
+      name "bt_e"
+      range 11
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -934,7 +935,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 10
+      range 11
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -1009,7 +1010,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 10
+      range 11
       channel 2
     }
     DEF RECEIVER Receiver {
@@ -1030,7 +1031,7 @@ E-puck {
   ]
 }
 E-puck {
-  translation -1.96489 3.13083e-14 -10.3422
+  translation -1.56259 3.13083e-14 -12.0541
   rotation 0 1 0 2.61799
   name "epuck14"
   controller "test_comms_position"
@@ -1056,7 +1057,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -1084,7 +1085,7 @@ E-puck {
     }
     DEF EMITTER Emitter {
       name "bt_e"
-      range 10
+      range 11
       channel 2
     }
     DEF RECEIVER Receiver {
