@@ -6,7 +6,7 @@ WorldInfo {
 }
 Viewpoint {
   orientation 0.5798127056590108 0.5658124236095867 0.5862367505073555 4.161978747179303
-  position -0.7157242004177536 50.698906997345475 1.3515564934049333
+  position -2.3297417259805644 8.652102765111621 1.2448412928883295
 }
 TexturedBackground {
 }
@@ -54,7 +54,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 1 0
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -131,7 +131,7 @@ E-puck {
   ]
 }
 E-puck {
-  translation -2.0774 -3.33067e-16 12.2533
+  translation -2.44316 -1.22125e-15 1.87925
   rotation 0 1 0 -0.523595307179586
   name "epuck2"
   controller "test_comms_position"
@@ -157,7 +157,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -232,7 +232,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -307,7 +307,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -356,7 +356,7 @@ E-puck {
   ]
 }
 E-puck {
-  translation -1.81849 2.77556e-14 12.1972
+  translation -2.63606 2.33147e-14 2.35765
   rotation 0 1 0 0.785402
   name "epuck5"
   controller "test_comms_position"
@@ -382,7 +382,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -431,7 +431,7 @@ E-puck {
   ]
 }
 E-puck {
-  translation -2.38257 3.26406e-14 12.1399
+  translation -2.932 9.54796e-15 1.62704
   rotation 0 1 0 -0.523595307179586
   name "epuck6"
   controller "test_comms_position"
@@ -457,7 +457,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -506,7 +506,7 @@ E-puck {
   ]
 }
 E-puck {
-  translation -2.33553 3.13083e-14 12.4897
+  translation -3.25164 3.93019e-14 2.15957
   rotation 0 1 0 -0.523595307179586
   name "epuck7"
   controller "test_comms_position"
@@ -532,7 +532,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 1
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -607,7 +607,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 1 0
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -656,10 +656,10 @@ E-puck {
   ]
 }
 E-puck {
-  translation -1.91787 0.02 12.612
+  translation -2.23304 0.02 2.87797
   rotation 0 1 0 -0.523595307179586
   name "epuck9"
-  controller "test_comms_position"
+  controller ""
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -682,7 +682,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 0
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -731,10 +731,10 @@ E-puck {
   ]
 }
 E-puck {
-  translation -14.2563 0.02 4.62675
+  translation -3.27062 0.02 0.701558
   rotation 0 1 0 -1.047195307179586
   name "epuck10"
-  controller "test_comms_position"
+  controller ""
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -757,7 +757,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 0
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -806,10 +806,10 @@ E-puck {
   ]
 }
 E-puck {
-  translation -2.04145 0.02 11.9664
+  translation -2.00855 0.02 1.74231
   rotation 0 -1 0 -5.307179586466759e-06
   name "epuck11"
-  controller "test_comms_position"
+  controller ""
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -832,7 +832,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 0
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -884,7 +884,7 @@ E-puck {
   translation -2.06531 3.13083e-14 0.0701222
   rotation 0 1 0 2.61799
   name "epuck12"
-  controller "test_comms_position"
+  controller ""
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -907,7 +907,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 0
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -959,7 +959,7 @@ E-puck {
   translation -1.7757 3.13083e-14 0.12492
   rotation 0 1 0 2.61799
   name "epuck13"
-  controller "test_comms_position"
+  controller ""
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -982,7 +982,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 0
               intensity 0.5
               location 0 0.03 0
               on FALSE
@@ -1031,10 +1031,10 @@ E-puck {
   ]
 }
 E-puck {
-  translation -1.56259 3.13083e-14 -12.0541
+  translation -2.1005 3.13083e-14 -0.659735
   rotation 0 1 0 2.61799
   name "epuck14"
-  controller "test_comms_position"
+  controller ""
   supervisor TRUE
   battery [
     1800000, 1800000, 2
@@ -1057,7 +1057,7 @@ E-puck {
             }
             PointLight {
               attenuation 0 0 1
-              color 1 0 0
+              color 0 0 0
               intensity 0.5
               location 0 0.03 0
               on FALSE

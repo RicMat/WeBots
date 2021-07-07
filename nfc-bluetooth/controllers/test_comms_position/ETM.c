@@ -23,23 +23,23 @@ int retrieve_closest_external_connection(int hop_team_idx, int ext_team_size) {
   // float x_ext, y_ext;
   int scores[6] = {0};
   int out, min = 1000;
-  // printf("  line 1\n");
+  printf("  line 1\n");
   struct option
   {
     int size;
     int idx;
   } options[idx_team];
   
-  // printf("  line 2 idx team: %d\n", idx_team);
+  printf("  line 2 idx team: %d\n", idx_team);
   for (i=0; i<idx_team; i++) {
-    // printf("  line 3\n");
+    printf("  line 3\n");
     /* if there is a connection established */
     if (ext_connections[i].size > 0) {
-      // printf("  line 4 i: %d\n", i);
+      printf("  line 4 i: %d\n", i);
       /* only possible unions */
-      // printf("  extcommsize: %d extsize: %d\n", ext_connections[i].size, ext_team_size);
+      printf("  extcommsize: %d extsize: %d\n", ext_connections[i].size, ext_team_size);
       if (ext_connections[i].size + ext_team_size <= 7) {
-        // printf("  line 5 size: %d idx: %d\n", ext_connections[i].size + ext_team_size, i);
+        printf("  line 5 size: %d idx: %d\n", ext_connections[i].size + ext_team_size, i);
         /* save the index and the total size */
         options[i].size = ext_connections[i].size + ext_team_size;
         options[i].idx = i;
@@ -50,7 +50,7 @@ int retrieve_closest_external_connection(int hop_team_idx, int ext_team_size) {
       }
     }
     else {
-      // printf("  line 6 i: %d size: %d idx: %d\n", i, ext_connections[i].size + ext_team_size, i);
+      printf("  line 6 i: %d size: %d idx: %d\n", i, ext_connections[i].size + ext_team_size, i);
       /* save the index and the total size */
       options[i].size = ext_team_size;
       options[i].idx = i;
@@ -66,16 +66,16 @@ int retrieve_closest_external_connection(int hop_team_idx, int ext_team_size) {
   */
   // printf("---\n");
   for (i=0; i< idx_team; i++) {
-    // printf("  line 7 i: %d scores[i]: %d\n", i, scores[i]);
+    printf("  line 7 i: %d scores[i]: %d\n", i, scores[i]);
     scores[i] += 7 - options[i].size;
-    // printf("  plus 1 %d\n", 7 - options[i].size);
+    printf("  plus 1 %d\n", 7 - options[i].size);
     scores[i] += 2 * abs(options[i].idx - hop_team_idx);
-    // printf("  plus 2 %d\n", 2 * abs(options[i].idx - hop_team_idx));
+    printf("  plus 2 %d\n", 2 * abs(options[i].idx - hop_team_idx));
     if (scores[i] < min) {
-      // printf("  line 8 i: %d\n", i);
-      // printf("  scores: %d\n", scores[i]);
+      printf("  line 8 i: %d\n", i);
+      printf("  scores: %d\n", scores[i]);
       min = scores[i];
-      out = i;
+      out = i+1;
     }
   }
   

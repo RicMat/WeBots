@@ -100,11 +100,11 @@ int rand_num, num, my_ID, counter = 0, run = 0;
 
 /* Basic comms */
 char code_in[4], ext_ID_s[4], my_ID_s[4], receiver_ID_s[4], leader_ID_s[4], ext_leader_ID_s[4];
-char message[37+1], ttl_s[4], extra[22+1], tmp_s[37+1], tmp_ss[4], ext_team_size_s[3+1];
+char message[37+1], ttl_s[4], extra[22+1], tmp_s[37+1], tmp_s2[37+1], tmp_ss[4], ext_team_size_s[3+1];
 char ext_team_player, ext_leader;
-bool leader = false, team_player = false, in_queue = false, duplicate_message = false;
+bool leader = false, team_player = false, in_queue = false, duplicate_message = false, relayed = false;
 int leader_ID = 0, ext_leader_ID = 0, idx_comms = 0, idx_team = 0, ext_ID = 0, ext_team_size;
-int receiver_ID = 0, tmp = 0, ttl = 0;
+int receiver_ID = 0, tmp = 0, ttl = 0, confirmation = 0;
 int team_IDs[7];
 
 /* Location */
@@ -118,6 +118,9 @@ bool location_change = false, new_bot = false, waiting_new_bot = false, in_line 
 /* Stored messages - Could use an Hash Table */
 char messages_lookback[10][SIZE][37+1];
 int messages_lookback_size[10] = {0};
+
+char messages_relayed[SIZE][37+1];
+int messages_relayed_size = 0;
 
 /* External connections */
 // char ext_connection_ID_s[3+1];
@@ -183,6 +186,7 @@ void append_bot(char* bot_ID) {
   We first check if the bot is already in the queue and if it's, we discard it
   
   */
+  
   in_queue = false;
   
   for (i=0; i<idx_team; i++) {
@@ -192,13 +196,18 @@ void append_bot(char* bot_ID) {
     }
   }
   
+  if (idx_team == 6 || in_queue) {
+    printf("%d queue full\n", my_ID);
+    return;
+  }
+  
   if (!in_queue) {
     team_IDs[idx_team] = atoi(bot_ID);
     // if (my_ID == 1)
       // printf("%d appending %d\n", my_ID, atoi(bot_ID));
-      if (my_ID == 1) {
-        printf("- - %d appending %d\n", my_ID, atoi(bot_ID));
-      }
+      // if (my_ID == 1) {
+        printf("%d appending %d\n", my_ID, atoi(bot_ID));
+      // }
     idx_team += 1;
   }
 }
@@ -533,9 +542,9 @@ bool duplicate_message_check(char* code_in, int sender, int receiver, int ext_te
     //
     ////////
       // printf("%d supl check received EBR: %s\n", my_ID, buffer);
-      printf("%d EBR check:\n", my_ID);
-      printf("  receiver: %d, ext_comm: %d\n", receiver, atoi(ext_connection.ext_ID_s));
-      printf("  bool: %d\n", (receiver != my_ID && receiver != 0 && receiver != atoi(ext_connection.ext_ID_s) && strcmp(code_in, "LOC") != 0));
+      // printf("%d EBR check:\n", my_ID);
+      // printf("  receiver: %d, ext_comm: %d\n", receiver, atoi(ext_connection.ext_ID_s));
+      // printf("  bool: %d\n", (receiver != my_ID && receiver != 0 && receiver != atoi(ext_connection.ext_ID_s) && strcmp(code_in, "LOC") != 0));
    
       for (i=0; i<messages_lookback_size[5]; i++) {
         memset(tmp_ss, 0, 3+1);
@@ -648,7 +657,7 @@ bool duplicate_message_check(char* code_in, int sender, int receiver, int ext_te
       messages_lookback_size[9] += 1;
       return false;
     default:
-      printf("%d default %s\n", my_ID, buffer);
+      // printf("%d default %s\n", my_ID, buffer);
       return false;
   }
 }
@@ -668,7 +677,9 @@ void handle_excess_bot(char* hop_ID_s, char* hop_team_idx, char* ext_ID_s, char*
   /* Already in queue */
   for (i=0; i<idx_team; i++) {
     if (team_IDs[i] == atoi(ext_ID_s) || atoi(ext_connections[i].ext_ID_s) == atoi(ext_ID_s)) { 
-      printf("EBR overflow\n");
+      printf("- EBR overflow\n");
+      printf("  team_IDs[i]: %d, atoi(ext_ID_s): %d\n", team_IDs[i], atoi(ext_ID_s));
+      printf("  atoi(ext_connections[i].ext_ID_s): %d, atoi(ext_ID_s): %d\n", atoi(ext_connections[i].ext_ID_s), atoi(ext_ID_s));
       return;
     }
   }
@@ -771,17 +782,18 @@ void handle_excess_bot(char* hop_ID_s, char* hop_team_idx, char* ext_ID_s, char*
   }
     
   if (ext_connections[out].size > 0) {
-    // printf("%d step 8\n", my_ID);
+    printf("%d step 8\n", my_ID);
     // ext_connections[out].size += ext_team_size;
     
     // construct_share_with_team_message("UPD", my_ID_s, hop_ID_s, my_ID_s, "000", "001");
     // wb_emitter_send(emitter_bt, message, strlen(message) + 1);
     sprintf(hop_ID_s, "%03d", team_IDs[out-1]);
-    printf("%d updating hop for idx %d to %s\n", my_ID, out-1, hop_ID_s);
+    // printf("%d updating hop for idx %d to %s\n", my_ID, out-1, hop_ID_s);
     
   }
   else {
-    printf("%d leader storing ext conn %s\n", my_ID, ext_ID_s);
+    // printf("%d leader storing ext conn %s\n", my_ID, ext_ID_s);
+    printf("%d step 9\n", my_ID);
     leader_store_external_connection(out, ext_ID_s, ext_leader_ID_s, ext_team_size);
   }
   
@@ -873,12 +885,38 @@ void handle_message(char* buffer) {
     // if (strcmp(code_in, "LOC") == 0) {// && my_ID == 3) {
       // printf("%d relayed %s\n", my_ID, buffer);
     // }
-    memset(message, 0, 37+1);
-    strncpy(message, buffer, 12);
-    sprintf(tmp_s, "%03d", ttl-1);
-    strcat(message, tmp_s);
-    strcat(message, buffer+15);
-    wb_emitter_send(emitter_bt, message, strlen(message) + 1);
+    
+    relayed = false;
+    
+    for (i=messages_relayed_size; i>0; i--) {
+      memset(tmp_s, 0, 37+1);
+      strncpy(tmp_s, messages_relayed[i], 12); /* check the sender */
+      memset(tmp_s2, 0, 37+1);
+      strncpy(tmp_s2, buffer, 12);
+      if (strcmp(tmp_s, tmp_s2) == 0) {
+        memset(tmp_s, 0, 37+1);
+        strcpy(tmp_s, messages_relayed[i]+15);
+        memset(tmp_s2, 0, 37+1);
+        strcpy(tmp_s2, buffer+15);
+        // printf("-- checking messages_relayed: %s and extra %s\n", tmp_s, tmp_s2);
+        if (strcmp(tmp_s, tmp_s2) == 0) {
+          relayed = true;
+          break;
+        }
+      }
+    }
+    
+    if (!relayed) {
+      // printf("%d relaying %s\n", my_ID, buffer);
+      memset(message, 0, 37+1);
+      strncpy(message, buffer, 12);
+      sprintf(tmp_s, "%03d", ttl-1);
+      strcat(message, tmp_s);
+      strcat(message, buffer+15);
+      wb_emitter_send(emitter_bt, message, strlen(message) + 1);
+      strcpy(messages_relayed[messages_relayed_size], buffer);
+      messages_relayed_size += 1;
+    }
   }
   
   // if (strcmp(code_in, "ILM") == 0) {
@@ -911,13 +949,13 @@ void handle_message(char* buffer) {
   
   if (duplicate_message) {
     if (strcmp(code_in, "UPD") == 0) {
-      printf("%d discard UPD for %d\n", my_ID, ext_ID);
+      // printf("%d discard UPD for %d\n", my_ID, ext_ID);
     }
     return;
   }
   
-  if (my_ID == 1) {
-    printf("--- received %s\n", buffer);
+  if (my_ID != 111) {
+    printf("%d received %s\n", my_ID, buffer);
   }
   
   switch(hash_codes(code_in))
@@ -947,7 +985,7 @@ void handle_message(char* buffer) {
       // To Do: If I'm the leader (e.g. at the real beginning there are 8 bots) I should declare a bot in charge of it
       //
       ////
-      
+      printf("%d handling DNB\n", my_ID);
       in_queue = false;
   
       for (i=0; i<idx_team; i++) {
@@ -1019,7 +1057,7 @@ void handle_message(char* buffer) {
               strcat(tmp_s, ext_leader_ID_s);
               strcat(tmp_s, ext_team_size_s);
               construct_share_with_team_message("EBR", my_ID_s, leader_ID_s, leader_ID_s, "000", tmp_s);
-              printf("%d sending EBR\n", my_ID);
+              // printf("%d sending EBR\n", my_ID);
               wb_emitter_send(emitter_bt, message, strlen(message) + 1);
               // if (ext_ID == 10)
                 // printf("sent EBR 10: %s\n", message);
@@ -1067,6 +1105,7 @@ void handle_message(char* buffer) {
         /* since it's only a single bot, we might just swap the ID of the bot 
            and the ID of actual leader so we do not have to transfer the whole data */
         join_external_team(ext_ID_s, ext_leader_ID_s);
+        confirmation = 0;
       }
       break;
     /*
@@ -1085,7 +1124,8 @@ void handle_message(char* buffer) {
         his location
         - If we are not the leader we simply save the info about the new bot
       
-      */ 
+      */
+      printf("%d handling LJT\n", my_ID); 
       strncpy(tmp_ss, buffer+15, 3);
       inglobate_external_team(tmp_ss, "003"); /* go through hop and reach the other (old) leader */
       // char term = buffer[18];
@@ -1126,6 +1166,7 @@ void handle_message(char* buffer) {
       - If we are not the leader we simply save the info about the new bot
       
       */ 
+      printf("%d handling ITM\n", my_ID);
       // if (receiver_ID != my_ID)
         // break;
       memset(tmp_ss, 0, 3+1);
@@ -1139,7 +1180,7 @@ void handle_message(char* buffer) {
         // printf("%d sending location to %d\n", my_ID, atoi(tmp_ss));
         inform_new_location(tmp_ss, "006"); // TTL set to 7 as the worst case
         if (atoi(tmp_ss) == 10)
-          printf("%d sending location to 10\n", my_ID);
+          // printf("%d sending location to 10\n", my_ID);
         waiting_new_bot = true;
       }
     break;
@@ -1153,9 +1194,11 @@ void handle_message(char* buffer) {
     
     */
     case 4: // "ILM" - Inform of new Location Message
-      printf("%d received ILM from %d: %s\n", my_ID, ext_ID, buffer);
+      // printf("%d received ILM from %d: %s\n", my_ID, ext_ID, buffer);
+      printf("%d handling ILM\n", my_ID);
       if (receiver_ID != my_ID)
         break;
+      confirmation += 1;
       memset(x_ref_s, 0, 7+1);
       strncpy(x_ref_s, buffer+15, 7);
       x_ref = atof(x_ref_s);
@@ -1201,6 +1244,7 @@ void handle_message(char* buffer) {
       The leader will therefore check the available external connections and redirect the bot to the closest one
       
       */
+      printf("%d handling EBR\n", my_ID);
       memset(hop_team_idx, 0, 3+1);
       strncpy(hop_team_idx, buffer+15, 3);
       strncpy(hop_ID_s, ext_ID_s, 3);
@@ -1211,7 +1255,7 @@ void handle_message(char* buffer) {
       memset(ext_team_size_s, 0, 3+1);
       strncpy(ext_team_size_s, buffer+24, 3);
       ext_team_size = atoi(ext_team_size_s);
-      printf("%d received EBR: %s\n", my_ID, buffer);
+      // printf("%d received EBR: %s\n", my_ID, buffer);
       // printf("  hop_ID_s %s hop_team_idx %s ext_ID_s %s \n", hop_ID_s, hop_team_idx, ext_ID_s);
       handle_excess_bot(hop_ID_s, hop_team_idx, ext_ID_s, ext_leader_ID_s, ext_team_size);
       break;
@@ -1224,10 +1268,10 @@ void handle_message(char* buffer) {
     
     */
     case 6: // "LOC" - Localization Bot Request
-      printf("%d received LOC %s\n", my_ID, buffer);
+      // printf("%d received LOC %s\n", my_ID, buffer);
       global_leader = false;
       
-      
+      printf("%d handling LOC\n", my_ID);
       //
       //
       // Add hop_ID from idx=15 to idx=17
@@ -1241,8 +1285,8 @@ void handle_message(char* buffer) {
       if (strcmp(hop_ID_s, my_ID_s) == 0) { // I'm the hop, just store the data and go away
         store_external_connection(ext_ID_s, ext_leader_ID_s, ext_team_size);
         relay = true;
-        printf("%d relay 1\n", my_ID);
-        printf("  storing %d from %s\n", ext_ID, buffer);
+        // printf("%d relay 1\n", my_ID);
+        // printf("  storing %d from %s\n", ext_ID, buffer);
         break;
       }
       printf("  my ref was x %f y %f\n", x_ref, y_ref);
@@ -1310,12 +1354,12 @@ void handle_message(char* buffer) {
           // construct_share_with_team_message("LOC", my_ID_s, ext_ID_s, team_angle_s, "001", tmp_s);  // vals[0], vals[1], team_bearing);
           wb_emitter_send(emitter_bt, message, strlen(message) + 1);
           relay = true;
-          printf("%d relay 2\n", my_ID);
+          // printf("%d relay 2\n", my_ID);
         } 
       }
       else { /* Scenario 3: Coming from my follower; Update my location and inform my followers */
         printf("%d scenario 3\n", my_ID);
-        printf("  my idx: %d\n", 0);
+        // printf("  my idx: %d\n", 0);
         handle_position_f(x_ref, y_ref, 0, true);
         leader_store_external_connection(((my_team_idx + 2) % 6) + 1, hop_ID_s, tmp_ss, ext_team_size);
 
@@ -1332,7 +1376,7 @@ void handle_message(char* buffer) {
           angle_compass = get_bearing_in_degrees(compass);
           // printf("%d sending ILM with compass %f\n", my_ID, angle_compass);
           construct_inform_location_message(my_ID_s, tmp_ss, leader_ID_s, "000", x_ref, y_ref, team_angle, i+1);
-          printf("  sending to %s: %s\n", tmp_ss, message);
+          // printf("  sending to %s: %s\n", tmp_ss, message);
           wb_emitter_send(emitter_bt, message, strlen(message) + 1);
         }
       }
@@ -1361,6 +1405,7 @@ void handle_message(char* buffer) {
       // printf("%d my position %d\n", my_ID, location_change);
       break;
     case 7: // ARR
+      printf("%d handling ARR\n", my_ID);
       // printf("%d received ARR from %d\n", my_ID, ext_ID);
       // printf("  arrived followers: %d, team size: %d\n", arrived_folls + 1, idx_team);
       // arrived_folls += 1;
@@ -1391,14 +1436,14 @@ void handle_message(char* buffer) {
         if (ext_ID == atoi(ext_connection.ext_leader_ID_s)) {
           /* we rework this message and send it to our leader */
           if (etrf) {
-            printf("%d sending 1\n", my_ID);
+            // printf("%d sending 1\n", my_ID);
             sprintf(tmp_s, "000111");
           }
           else {
-            printf("%d sending 2\n", my_ID);
+            // printf("%d sending 2\n", my_ID);
             sprintf(tmp_s, "000110");
           }
-          printf("%d sending 3\n", my_ID);
+          // printf("%d sending 3\n", my_ID);
           construct_share_with_team_message("ARR", my_ID_s, leader_ID_s, leader_ID_s, "001", tmp_s);
           wb_emitter_send(emitter_bt, message, strlen(message) + 1);
         }
@@ -1440,7 +1485,7 @@ void handle_message(char* buffer) {
       
       
       if (!ete) {
-        printf("%d received 1\n", my_ID);
+        // printf("%d received 1\n", my_ID);
         /* If there is no external connection we should wait for, we simply flag this position as ready */
         // arr_folls_r[iid] = 1;
         // missing_ext_r[iid] = 0;
@@ -1451,25 +1496,25 @@ void handle_message(char* buffer) {
       else {
        /* If external connection exists, we check whether it says it's done */
        if (etr) {
-         printf("%d received 2\n", my_ID);
+         // printf("%d received 2\n", my_ID);
          /* External team is informing us that they are done and ready to move 
          We can update the flags and update the sum of missing ext connections*/
          if (etrf) {
-           printf("%d received 3\n", my_ID);
+           // printf("%d received 3\n", my_ID);
            // missing_ext_r[iid] = 0;
            // missing_ext -= 1;
            // arrived_ext_part -= 1;
            arrived_ext_full += 1;
          }
          else {
-           printf("%d received 4\n", my_ID);
+           // printf("%d received 4\n", my_ID);
            /* If the external team is not completely ready, we count it as partial */
            // missing_ext_r[iid] = 1;
            arrived_ext_part += 1;
          }
        }
        else {
-         printf("%d received 5\n", my_ID);
+         // printf("%d received 5\n", my_ID);
          arrived_folls += 1;
          /*missing_ext_r[iid] is initialized to 1 */
          // missing_ext_r[iid] = 1;
@@ -1494,12 +1539,12 @@ void handle_message(char* buffer) {
       // }
       
        if (leader && arrived_folls == idx_team) {
-         printf("%d leader idx_team %d\n", my_ID, idx_team);
+         // printf("%d leader idx_team %d\n", my_ID, idx_team);
          if (arrived_ext_full == idx_team) {
            /* this means that evvery external team is completely ready */
            if (global_leader) {
              /* send out signal to move */
-             printf("%d fuck ittttt\n", my_ID);
+             // printf("%d fuck ittttt\n", my_ID);
              construct_share_with_team_message("MOV", my_ID_s, "000", "000", "007", "000");
              wb_emitter_send(emitter_bt, message, strlen(message) + 1);
              waiting_new_bot = false;
@@ -1529,7 +1574,7 @@ void handle_message(char* buffer) {
              if (ext_connections[i].size > 0) {
                sprintf(tmp_s, "000110"); // maybe 000110
                construct_share_with_team_message("ARR", my_ID_s, "000", leader_ID_s, "002", tmp_s);
-               printf("%d sending ARR outside team\n", my_ID);
+               // printf("%d sending ARR outside team\n", my_ID);
                wb_emitter_send(emitter_bt, message, strlen(message) + 1);
              }
            }
@@ -1570,7 +1615,7 @@ void handle_message(char* buffer) {
       
       
       
-      printf("%d arrived folls: %d\n", my_ID, arrived_folls);
+      // printf("%d arrived folls: %d\n", my_ID, arrived_folls);
       
       
       
@@ -1578,17 +1623,18 @@ void handle_message(char* buffer) {
       // if comin from external team update the connection and the sum
       break;
     case 8: // UPD
+      printf("%d handling UPD\n", my_ID);
       memset(ext_connection.ext_ID_s, 0, 3+1);
       memset(ext_connection.ext_leader_ID_s, 0, 3+1);
       ext_connection.size = 0;
       relay = false;
-      printf("%d received UPD\n", my_ID);
+      // printf("%d received UPD\n", my_ID);
       break;
     case 9: // MOV
       location_change = false;
       waiting_new_bot = false;
       global_movement = 1;
-      printf("%d fuck this shit\n", my_ID);
+      // printf("%d fuck this shit\n", my_ID);
       break;
     default:
       break;
@@ -1781,7 +1827,7 @@ void inform_new_location(char* ext_ID_s, char* TTL) {
   
   if (leader) {
     if (global_leader) {
-      printf("%d updating team_angle to %f\n", my_ID, angle_compass);
+      // printf("%d updating team_angle to %f\n", my_ID, angle_compass);
       team_angle = angle_compass;
       sprintf(team_angle_s, "%03d", team_angle);
     }
@@ -1789,7 +1835,7 @@ void inform_new_location(char* ext_ID_s, char* TTL) {
   // printf("%d sending ILM with compass %f\n", my_ID, angle_compass);
   
   construct_inform_location_message(my_ID_s, ext_ID_s, leader_ID_s, TTL, x_ref, y_ref, team_angle, idx_team);
-  printf("%d sending ILM %s\n", my_ID, message);
+  // printf("%d sending ILM %s\n", my_ID, message);
   wb_emitter_send(emitter_bt, message, strlen(message) + 1);
 }
 
@@ -2011,8 +2057,26 @@ int main() {
     /* Check for new messages and process them */
     while (wb_receiver_get_queue_length(receiver_bt) > 0) {
       const char *buffer = wb_receiver_get_data(receiver_bt);
+      // printf("%d handling message %s\n", my_ID, buffer);
       handle_message((char*)buffer);
       wb_receiver_next_packet(receiver_bt);      
+    }
+    
+    if (confirmation == 1 && !leader) {
+      printf("%d resetting leader and team\n", my_ID);
+      leader_ID = my_ID;
+      sprintf(leader_ID_s, "%03d", my_ID);
+      team_player = false;
+      leader = true;
+      for (i=0; i<idx_team; i++) {
+        team_IDs[0] = 0;
+      }
+      idx_team = 0;
+      
+    }
+    
+    if (confirmation == 0) {
+      confirmation += 1;
     }
     
     if (team_player) {
@@ -2022,7 +2086,10 @@ int main() {
         wb_led_set(leddl, 4);
       else
         wb_led_set(leddl, 3);
-    }         
+    } 
+    else {
+      wb_led_set(leddl, 1);
+    }        
       
     /*
     
@@ -2039,10 +2106,12 @@ int main() {
     if (location_change && !in_line && !oam_active) {
       /* First we rotate */
       handle_rotation(-1.0);
+      // printf("%d rotating\n", my_ID);
       /* Reset flag */
     }    
     /* Once we are in line for moving to the goal location, we can start move */
     else if (turn_dist_counter < 2 && dist_to_goal > 0.1 && in_line) {
+      
       speed[LEFT] = 150;
       speed[RIGHT] = 150;
       dist_to_goal -= 1.0/829;
@@ -2157,6 +2226,13 @@ int main() {
     
     wb_motor_set_velocity(left_motor, 0.00628 * speed[LEFT]);
     wb_motor_set_velocity(right_motor, 0.00628 * speed[RIGHT]);
+    
+    // printf("%d team has %d bots:\n", my_ID, idx_team);
+    // for (i=0; i<idx_team-1; i++) {
+      // printf("%d, ", team_IDs[i]);
+    // }
+    // if (idx_team > 0)
+      // printf("%d\n", team_IDs[idx_team-1]);
     
   }
   
