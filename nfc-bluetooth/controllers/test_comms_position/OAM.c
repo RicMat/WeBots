@@ -138,6 +138,7 @@ int sign(float number) {
 }
 
 void handle_rotation(float g_angle) {
+  // printf("%d turning\n", my_ID);
   if (g_angle != -1) {
     // printf("wtf %d\n", my_ID);
     angle_compass = (get_bearing_in_degrees(compass));
@@ -148,11 +149,11 @@ void handle_rotation(float g_angle) {
     if (fabs(diff_angle) > 180) {
       diff_angle = sign(diff_angle) * (360.0 - fabs(diff_angle)) * (-1);
     }
-    turn_dist_counter = 0;
+    turn_counter = 0;
     backup = fabs(diff_angle);    
   }
   
-  if (turn_dist_counter == 0 && g_angle == -1) {
+  if (turn_counter == 0 && g_angle == -1) {
     // printf("ok 1 %d\n", my_ID);
     /* If this is the first time checking the angle, we do it */
     double *values = (double* )wb_gps_get_values(gps);
@@ -180,12 +181,12 @@ void handle_rotation(float g_angle) {
     if (fabs(diff_angle) > 180) {
       diff_angle = sign(diff_angle) * (360.0 - fabs(diff_angle)) * (-1);
     }
-    turn_dist_counter = 0;
+    turn_counter = 0;
     backup = fabs(diff_angle);
   }
    
   /* We check the angle 3 times along the way */
-  if (turn_dist_counter < 3) {
+  if (turn_counter < 3) {
   
     // printf("ok 2 %d\n", my_ID);
     // printf("%d step 1\n", my_ID);
@@ -207,7 +208,7 @@ void handle_rotation(float g_angle) {
       // printf("  recalc angle %f compass %f\n", angle, angle_compass);
       // printf("  recalc diff_angle %f\n", diff_angle);
       backup = fabs(diff_angle);
-      turn_dist_counter += 1;
+      turn_counter += 1;
     }
         
     if (fabs(diff_angle) < 2) {
@@ -216,7 +217,8 @@ void handle_rotation(float g_angle) {
       // printf("%d initial distance %f\n", my_ID, dist_to_goal);
       // printf("  initial angle offset %f\n", diff_angle);
       backup = dist_to_goal;
-      turn_dist_counter = 0;
+      turn_counter =0;
+      dist_counter = 0;
       in_line = true;
     }
   }
@@ -230,7 +232,8 @@ void handle_rotation(float g_angle) {
       // printf("%d initial distance %f\n", my_ID, dist_to_goal);
       // printf("  initial angle offset %f\n", diff_angle);
       backup = dist_to_goal;
-      turn_dist_counter = 0;
+      dist_counter = 0;
+      turn_counter = 0;
       in_line = true;
     }
   }
