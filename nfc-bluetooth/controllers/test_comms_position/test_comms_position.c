@@ -2682,12 +2682,11 @@ int main() {
           check_team_arrival();
           arrival_update = false;
         }
-        else {
-          printf("%d sending ARR %s\n", my_ID, message);
-          wb_emitter_send(emitter_bt, message, strlen(message) + 1);
-          location_change = false;
-          dist_to_goal = -1.0;
-        }
+        
+        printf("%d sending ARR %s\n", my_ID, message);
+        wb_emitter_send(emitter_bt, message, strlen(message) + 1);
+        location_change = false;
+        dist_to_goal = -1.0;
         
         if (printed == 0) {
           double *values = (double* )wb_gps_get_values(gps);
