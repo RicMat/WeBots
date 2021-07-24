@@ -1,7 +1,7 @@
 #ifndef MHM_H_   
 #define MHM_H_
 
-extern char message[37+1], tmp_s[37+1];
+extern char message[37+1], tmp_s[37+1], tmp_ss[3+1];
 extern int team_IDs[7];
 extern int idx_team;
 

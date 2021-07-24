@@ -21,7 +21,7 @@ void construct_discovery_message(int my_ID, char team_player, char leader, int t
     strcat(message, "N");
   }
   
-  sprintf(tmp_s, "%03d", idx_team+1);
+  sprintf(tmp_s, "%03d", team_size+1);
   strcat(message, tmp_s); // team_size
   
   if (leader) { // leader - if I'm leader of my team
@@ -107,13 +107,17 @@ void construct_inform_location_message(char* sender, char* receiver, char* team_
   strcat(message, receiver);
   strcat(message, team_ID_s);
   strcat(message, TTL); // TTL
+  memset(tmp_s, 0, 37+1);
   sprintf(tmp_s, "%07.3f", x_ref);
   strcat(message, tmp_s);
+  memset(tmp_s, 0, 37+1);
   sprintf(tmp_s, "%07.3f", y_ref);
   strcat(message, tmp_s);
-  sprintf(tmp_s, "%03d", angle);
-  strcat(message, tmp_s);
-  sprintf(tmp_s, "%1d", team_idx);
-  strcat(message, tmp_s);
+  memset(tmp_ss, 0, 3+1);
+  sprintf(tmp_ss, "%03d", angle);
+  strcat(message, tmp_ss);
+  memset(tmp_ss, 0, 3+1);
+  sprintf(tmp_ss, "%1d", team_idx);
+  strcat(message, tmp_ss);
    
 }

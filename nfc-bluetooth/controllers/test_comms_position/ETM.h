@@ -1,6 +1,9 @@
 #ifndef ETM_H_   
 #define ETM_H_
 
+#include <stdio.h>
+#include <stdlib.h>
+
 typedef struct LeaderExtConnection
 {
   char hop_ID_s[3+1];
