@@ -159,7 +159,7 @@ void handle_rotation(float g_angle) {
     double *values = (double* )wb_gps_get_values(gps);
     x = values[2];
     y = values[0];
-    // printf("%d x: %f, y: %f, x_goal: %f, y_goal: %f\n", my_ID, x, y, x_goal, y_goal);
+    printf("%d x: %f, y: %f, x_goal: %f, y_goal: %f\n", my_ID, x, y, x_goal, y_goal);
     
     my_x = x - x_goal; 
     my_y = y - y_goal;
@@ -189,10 +189,10 @@ void handle_rotation(float g_angle) {
   if (turn_counter < 3) {
   
     // printf("ok 2 %d\n", my_ID);
-    // printf("%d step 1\n", my_ID);
+    printf("%d step 1\n", my_ID);
     // printf("  my idx %d\n", my_team_idx);
-    // printf("  angle %f compass %f\n", angle, angle_compass);
-    // printf("  diff_angle %f, backup/3 %f\n", diff_angle, backup/3);
+    printf("  angle %f compass %f\n", angle, angle_compass);
+    printf("  diff_angle %f, backup/3 %f\n", diff_angle, backup/3);
     speed[LEFT] = -150 * sign(diff_angle);
     speed[RIGHT] = 150 * sign(diff_angle);
     diff_angle -= (sign(diff_angle) * 360.0/150.0);
@@ -212,9 +212,9 @@ void handle_rotation(float g_angle) {
     }
         
     if (fabs(diff_angle) < 2) {
-      // printf("%d step 3\n", my_ID);
+      printf("%d step 3\n", my_ID);
       dist_to_goal = sqrtf(my_x*my_x + my_y*my_y);
-      // printf("%d initial distance %f\n", my_ID, dist_to_goal);
+      printf("%d initial distance %f\n", my_ID, dist_to_goal);
       // printf("  initial angle offset %f\n", diff_angle);
       backup = dist_to_goal;
       turn_counter =0;
@@ -223,13 +223,13 @@ void handle_rotation(float g_angle) {
     }
   }
   else {
-    // printf("%d step 4\n", my_ID);
+    printf("%d step 4\n", my_ID);
     speed[LEFT] = -150 * sign(diff_angle);
     speed[RIGHT] = 150 * sign(diff_angle);
     diff_angle -= (sign(diff_angle) * 360.0/150.0);
     if (fabs(diff_angle) < 2) {
       dist_to_goal = sqrtf(my_x*my_x + my_y*my_y);
-      // printf("%d initial distance %f\n", my_ID, dist_to_goal);
+      printf("%d initial distance %f\n", my_ID, dist_to_goal);
       // printf("  initial angle offset %f\n", diff_angle);
       backup = dist_to_goal;
       dist_counter = 0;
