@@ -2757,8 +2757,8 @@ int main() {
   // printf("%d after reset ref: x %f y %f\n", my_ID, x_ref, y_ref);
   
   /* File setup */
-  sprintf(filename, "Times%d_%d.txt", run+1, my_ID);
-  fpt = fopen(filename, "w");
+  // sprintf(filename, "Times%d_%d.txt", run+1, my_ID);
+  // fpt = fopen(filename, "w");
   // if (strncmp(wb_robot_get_name(), "epuck1", 7) == 0){
     // printf("Run%d Size:%.1f\n", run, FLOOR_SIZE);
     // fprintf(fpt, "Run%d Size:%.1f\n", run, FLOOR_SIZE);
@@ -2777,7 +2777,7 @@ int main() {
       run += 1;
       if (strncmp(wb_robot_get_name(), "epuck1", 7) == 0){
         printf("\nRun%d Size:%.1f\n", run, FLOOR_SIZE);
-        fprintf(fpt, "\nRun%d Size:%.1f\n", run, FLOOR_SIZE);
+        // fprintf(fpt, "\nRun%d Size:%.1f\n", run, FLOOR_SIZE);
       }
     }
 
