@@ -5,7 +5,7 @@ sceneTreePerspectives: 000000ff0000000100000002000000ed000000fa01000000020100000
 maximizedDockId: -1
 centralWidgetVisible: 1
 orthographicViewHeight: 1
-textFiles: 0 "controllers/test_comms_position/test_comms_position.c" "controllers/test_comms_position/OAM.c"
+textFiles: 0 "controllers/test_comms_position/test_comms_position.c" "controllers/test_comms_position/OAM.c" "controllers/test_comms_position/Makefile"
 consoles: Console:All:All
 renderingDevicePerspectives: epuck10:camera;1;1;0;0
 renderingDevicePerspectives: epuck11:camera;1;1;0;0

@@ -180,6 +180,10 @@ void ObstacleAvoidanceModule (void) {
   obstacle_avoidance();
   if (oam_active && !global_rotation) {
     // printf("%d obstacleee\n", my_ID);
+    if (obst_direction == 3 || obst_direction == 4) {
+      printf("%d behinddd\n", my_ID);
+      return;
+    }
     if (team_player) {
       /* Inform my neighbors */
       double *values = (double* )wb_gps_get_values(gps);
